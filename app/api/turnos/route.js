@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { crearTurno } from '@/lib/sheets';
+import { crearTurno, actualizarCalendarEventId } from '@/lib/sheets';
 import { crearEvento } from '@/lib/calendar';
 
 export async function POST(request) {
@@ -37,7 +37,7 @@ export async function POST(request) {
       hora,
     });
 
-    // Create Google Calendar event
+    // Create Google Calendar event and save event_id
     if (profesional_calendar_id) {
       const titulo = `Turno: ${paciente_nombre}`;
       const descripcion = [
@@ -47,15 +47,24 @@ export async function POST(request) {
         motivo ? `Motivo: ${motivo}` : '',
       ].filter(Boolean).join('\n');
 
-      await crearEvento(
-        profesional_calendar_id,
-        titulo,
-        fecha,
-        hora,
-        duracion_turno_minutos || 30,
-        descripcion
-      ).catch(err => console.error('Calendar event creation failed:', err));
+      try {
+        const evento = await crearEvento(
+          profesional_calendar_id,
+          titulo,
+          fecha,
+          hora,
+          duracion_turno_minutos || 30,
+          descripcion
+        );
+        if (evento?.id) {
+          await actualizarCalendarEventId(turno.id, evento.id).catch(() => {});
+        }
+      } catch (err) {
+        console.error('Calendar event creation failed:', err);
+      }
     }
+
+    const cancelar_url = `https://citaloapp.com.ar/cancelar/${turno.id}`;
 
     // Trigger n8n webhook
     if (process.env.N8N_WEBHOOK_URL) {
@@ -63,6 +72,7 @@ export async function POST(request) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          tipo: 'confirmacion',
           profesional_slug,
           profesional_nombre,
           profesional_whatsapp,
@@ -73,6 +83,7 @@ export async function POST(request) {
           motivo,
           fecha,
           hora,
+          cancelar_url,
         }),
       }).catch(err => console.error('n8n webhook failed:', err));
     }

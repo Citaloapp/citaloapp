@@ -144,6 +144,24 @@ export default function AdminPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  async function handleCancelTurno(turnoId, pacienteNombre) {
+    if (!confirm(`¿Cancelar el turno de "${pacienteNombre}"?`)) return;
+    try {
+      const res = await fetch(`/api/turnos/${turnoId}?cancelado_por=profesional`, {
+        method: 'DELETE',
+        headers: headers(),
+      });
+      if (res.ok) {
+        loadTurnos();
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Error al cancelar');
+      }
+    } catch {
+      alert('Error de conexión');
+    }
+  }
+
   async function handleDeletePro(slug, nombre) {
     if (!confirm(`¿Eliminar a "${nombre}"? Esta acción no se puede deshacer.`)) return;
     try {
@@ -386,11 +404,21 @@ export default function AdminPage() {
                             )}
                           </div>
                         </div>
-                        <Badge
-                          variant={t.estado === 'confirmado' ? 'success' : 'secondary'}
-                        >
-                          {t.estado}
-                        </Badge>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge variant={t.estado === 'confirmado' ? 'success' : 'secondary'}>
+                            {t.estado}
+                          </Badge>
+                          {t.estado === 'confirmado' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 hover:border-red-300"
+                              onClick={() => handleCancelTurno(t.id, t.paciente_nombre)}
+                            >
+                              Cancelar
+                            </Button>
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
                   ))
