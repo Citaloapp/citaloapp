@@ -13,6 +13,13 @@ import { Badge } from '@/components/ui/badge';
 
 const SESSION_KEY = 'citalo_admin_pw';
 
+const EMPTY_PRO = {
+  slug: '', nombre: '', especialidad: '', matricula: '',
+  foto_url: '', descripcion: '', telefono_whatsapp: '',
+  calendar_id: '', color_marca: '#2563eb',
+  obras_sociales: '', duracion_turno_minutos: '30',
+};
+
 export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
@@ -27,12 +34,14 @@ export default function AdminPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
-  const [newPro, setNewPro] = useState({
-    slug: '', nombre: '', especialidad: '', matricula: '',
-    foto_url: '', descripcion: '', telefono_whatsapp: '',
-    calendar_id: '', color_marca: '#2563eb',
-    obras_sociales: '', duracion_turno_minutos: '30',
-  });
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState('');
+  const [newPro, setNewPro] = useState(EMPTY_PRO);
+
+  // Edit state
+  const [editingPro, setEditingPro] = useState(null);
+  const [editPhotoFile, setEditPhotoFile] = useState(null);
+  const [editPhotoPreview, setEditPhotoPreview] = useState('');
 
   const storedPw = typeof window !== 'undefined' ? sessionStorage.getItem(SESSION_KEY) : null;
 
@@ -106,29 +115,136 @@ export default function AdminPage() {
     if (authenticated && selectedSlug) loadTurnos();
   }, [authenticated, selectedSlug, fecha, loadTurnos]);
 
+  function handlePhotoChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  }
+
+  function handleEditPhotoChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setEditPhotoFile(file);
+    setEditPhotoPreview(URL.createObjectURL(file));
+  }
+
+  function handleEditClick(pro) {
+    setEditingPro({
+      ...pro,
+      obras_sociales: Array.isArray(pro.obras_sociales)
+        ? pro.obras_sociales.join(', ')
+        : pro.obras_sociales,
+      duracion_turno_minutos: String(pro.duracion_turno_minutos),
+    });
+    setEditPhotoFile(null);
+    setEditPhotoPreview('');
+    setSaveMsg('');
+    setShowAddForm(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function handleDeletePro(slug, nombre) {
+    if (!confirm(`¿Eliminar a "${nombre}"? Esta acción no se puede deshacer.`)) return;
+    try {
+      const res = await fetch('/api/admin/profesionales', {
+        method: 'DELETE',
+        headers: headers(),
+        body: JSON.stringify({ slug }),
+      });
+      if (res.ok) {
+        setSaveMsg('Profesional eliminado');
+        loadProfesionales();
+      } else {
+        const d = await res.json();
+        setSaveMsg(d.error || 'Error al eliminar');
+      }
+    } catch {
+      setSaveMsg('Error de conexión');
+    }
+  }
+
   async function handleSavePro(e) {
     e.preventDefault();
     setSaving(true);
     setSaveMsg('');
+
+    let fotoUrl = newPro.foto_url;
+    if (photoFile) {
+      try {
+        const fd = new FormData();
+        fd.append('file', photoFile);
+        const upRes = await fetch('/api/upload', { method: 'POST', body: fd });
+        const upData = await upRes.json();
+        if (!upRes.ok) throw new Error(upData.error || 'Error al subir foto');
+        fotoUrl = upData.url;
+      } catch (err) {
+        setSaveMsg(err.message);
+        setSaving(false);
+        return;
+      }
+    }
+
     try {
       const res = await fetch('/api/admin/profesionales', {
         method: 'POST',
         headers: headers(),
-        body: JSON.stringify(newPro),
+        body: JSON.stringify({ ...newPro, foto_url: fotoUrl }),
       });
       if (res.ok) {
         setSaveMsg('Profesional agregado correctamente');
         setShowAddForm(false);
-        setNewPro({
-          slug: '', nombre: '', especialidad: '', matricula: '',
-          foto_url: '', descripcion: '', telefono_whatsapp: '',
-          calendar_id: '', color_marca: '#2563eb',
-          obras_sociales: '', duracion_turno_minutos: '30',
-        });
+        setNewPro(EMPTY_PRO);
+        setPhotoFile(null);
+        setPhotoPreview('');
         loadProfesionales();
       } else {
         const d = await res.json();
         setSaveMsg(d.error || 'Error al guardar');
+      }
+    } catch {
+      setSaveMsg('Error de conexión');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleUpdatePro(e) {
+    e.preventDefault();
+    setSaving(true);
+    setSaveMsg('');
+
+    let fotoUrl = editingPro.foto_url;
+    if (editPhotoFile) {
+      try {
+        const fd = new FormData();
+        fd.append('file', editPhotoFile);
+        const upRes = await fetch('/api/upload', { method: 'POST', body: fd });
+        const upData = await upRes.json();
+        if (!upRes.ok) throw new Error(upData.error || 'Error al subir foto');
+        fotoUrl = upData.url;
+      } catch (err) {
+        setSaveMsg(err.message);
+        setSaving(false);
+        return;
+      }
+    }
+
+    try {
+      const res = await fetch('/api/admin/profesionales', {
+        method: 'PUT',
+        headers: headers(),
+        body: JSON.stringify({ ...editingPro, foto_url: fotoUrl }),
+      });
+      if (res.ok) {
+        setSaveMsg('Profesional actualizado correctamente');
+        setEditingPro(null);
+        setEditPhotoFile(null);
+        setEditPhotoPreview('');
+        loadProfesionales();
+      } else {
+        const d = await res.json();
+        setSaveMsg(d.error || 'Error al actualizar');
       }
     } catch {
       setSaveMsg('Error de conexión');
@@ -290,14 +406,16 @@ export default function AdminPage() {
               <h2 className="font-semibold text-gray-900">
                 {profesionales.length} profesional{profesionales.length !== 1 ? 'es' : ''}
               </h2>
-              <Button onClick={() => setShowAddForm(!showAddForm)}>
+              <Button
+                onClick={() => { setShowAddForm(!showAddForm); setEditingPro(null); }}
+              >
                 {showAddForm ? 'Cancelar' : '+ Agregar profesional'}
               </Button>
             </div>
 
             {saveMsg && (
               <div className={`text-sm px-4 py-3 rounded-xl ${
-                saveMsg.includes('correctamente')
+                saveMsg.includes('correctamente') || saveMsg.includes('eliminado')
                   ? 'bg-green-50 text-green-700 border border-green-200'
                   : 'bg-red-50 text-red-700 border border-red-200'
               }`}>
@@ -305,6 +423,84 @@ export default function AdminPage() {
               </div>
             )}
 
+            {/* Edit form */}
+            {editingPro && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Editar profesional — {editingPro.nombre}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleUpdatePro} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField label="Slug">
+                      <Input value={editingPro.slug} disabled className="bg-gray-50 text-gray-400" />
+                    </FormField>
+                    <FormField label="Nombre completo *">
+                      <Input value={editingPro.nombre} onChange={e => setEditingPro(p => ({ ...p, nombre: e.target.value }))} required />
+                    </FormField>
+                    <FormField label="Especialidad *">
+                      <Input value={editingPro.especialidad} onChange={e => setEditingPro(p => ({ ...p, especialidad: e.target.value }))} required />
+                    </FormField>
+                    <FormField label="Matrícula">
+                      <Input value={editingPro.matricula} onChange={e => setEditingPro(p => ({ ...p, matricula: e.target.value }))} />
+                    </FormField>
+                    <FormField label="Foto de perfil">
+                      <div className="space-y-2">
+                        {(editPhotoPreview || editingPro.foto_url) && (
+                          <img
+                            src={editPhotoPreview || editingPro.foto_url}
+                            alt="Preview"
+                            className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                          />
+                        )}
+                        <Input type="file" accept="image/*" onChange={handleEditPhotoChange} className="cursor-pointer" />
+                        {editPhotoFile && <p className="text-xs text-gray-400">{editPhotoFile.name}</p>}
+                      </div>
+                    </FormField>
+                    <FormField label="WhatsApp">
+                      <Input value={editingPro.telefono_whatsapp} onChange={e => setEditingPro(p => ({ ...p, telefono_whatsapp: e.target.value }))} />
+                    </FormField>
+                    <FormField label="Google Calendar ID">
+                      <Input value={editingPro.calendar_id} onChange={e => setEditingPro(p => ({ ...p, calendar_id: e.target.value }))} />
+                    </FormField>
+                    <FormField label="Color de marca">
+                      <div className="flex gap-2 items-center">
+                        <input type="color" value={editingPro.color_marca} onChange={e => setEditingPro(p => ({ ...p, color_marca: e.target.value }))} className="h-10 w-12 rounded-lg border border-gray-300 cursor-pointer" />
+                        <Input value={editingPro.color_marca} onChange={e => setEditingPro(p => ({ ...p, color_marca: e.target.value }))} className="flex-1" />
+                      </div>
+                    </FormField>
+                    <FormField label="Duración turno (min)">
+                      <Select value={editingPro.duracion_turno_minutos} onChange={e => setEditingPro(p => ({ ...p, duracion_turno_minutos: e.target.value }))}>
+                        {[15, 20, 30, 45, 60].map(v => <option key={v} value={String(v)}>{v} min</option>)}
+                      </Select>
+                    </FormField>
+                    <FormField label="Obras sociales (separadas por coma)">
+                      <Input value={editingPro.obras_sociales} onChange={e => setEditingPro(p => ({ ...p, obras_sociales: e.target.value }))} />
+                    </FormField>
+                    <FormField label="Estado">
+                      <Select value={editingPro.activo} onChange={e => setEditingPro(p => ({ ...p, activo: e.target.value }))}>
+                        <option value="true">Activo</option>
+                        <option value="false">Inactivo</option>
+                      </Select>
+                    </FormField>
+                    <div className="sm:col-span-2">
+                      <FormField label="Descripción / Bio">
+                        <Textarea value={editingPro.descripcion} onChange={e => setEditingPro(p => ({ ...p, descripcion: e.target.value }))} />
+                      </FormField>
+                    </div>
+                    <div className="sm:col-span-2 flex gap-3 justify-end pt-2">
+                      <Button type="button" variant="outline" onClick={() => setEditingPro(null)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={saving}>
+                        {saving ? 'Guardando...' : 'Guardar cambios'}
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Add form */}
             {showAddForm && (
               <Card>
                 <CardHeader>
@@ -312,20 +508,30 @@ export default function AdminPage() {
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSavePro} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField label="Slug *" required>
+                    <FormField label="Slug *">
                       <Input placeholder="dra-garcia" value={newPro.slug} onChange={e => setNewPro(p => ({ ...p, slug: e.target.value }))} required />
                     </FormField>
-                    <FormField label="Nombre completo *" required>
+                    <FormField label="Nombre completo *">
                       <Input placeholder="Dra. Ana García" value={newPro.nombre} onChange={e => setNewPro(p => ({ ...p, nombre: e.target.value }))} required />
                     </FormField>
-                    <FormField label="Especialidad *" required>
+                    <FormField label="Especialidad *">
                       <Input placeholder="Cardiología" value={newPro.especialidad} onChange={e => setNewPro(p => ({ ...p, especialidad: e.target.value }))} required />
                     </FormField>
                     <FormField label="Matrícula">
                       <Input placeholder="12345" value={newPro.matricula} onChange={e => setNewPro(p => ({ ...p, matricula: e.target.value }))} />
                     </FormField>
-                    <FormField label="Foto URL">
-                      <Input placeholder="https://..." value={newPro.foto_url} onChange={e => setNewPro(p => ({ ...p, foto_url: e.target.value }))} />
+                    <FormField label="Foto de perfil">
+                      <div className="space-y-2">
+                        {(photoPreview || newPro.foto_url) && (
+                          <img
+                            src={photoPreview || newPro.foto_url}
+                            alt="Preview"
+                            className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                          />
+                        )}
+                        <Input type="file" accept="image/*" onChange={handlePhotoChange} className="cursor-pointer" />
+                        {photoFile && <p className="text-xs text-gray-400">{photoFile.name}</p>}
+                      </div>
                     </FormField>
                     <FormField label="WhatsApp">
                       <Input placeholder="5491123456789" value={newPro.telefono_whatsapp} onChange={e => setNewPro(p => ({ ...p, telefono_whatsapp: e.target.value }))} />
@@ -365,26 +571,52 @@ export default function AdminPage() {
               </Card>
             )}
 
+            {/* Profesionales list */}
             <div className="space-y-3">
               {profesionales.map(p => (
                 <Card key={p.slug}>
                   <CardContent className="py-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0"
-                        style={{ backgroundColor: p.color_marca || '#2563eb' }}
-                      >
-                        {p.nombre?.charAt(0) || '?'}
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900 text-sm">{p.nombre}</p>
+                    <div className="flex items-center gap-3 min-w-0">
+                      {p.foto_url ? (
+                        <img
+                          src={p.foto_url}
+                          alt={p.nombre}
+                          className="w-10 h-10 rounded-xl object-cover shrink-0"
+                        />
+                      ) : (
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0"
+                          style={{ backgroundColor: p.color_marca || '#2563eb' }}
+                        >
+                          {p.nombre?.charAt(0) || '?'}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 text-sm truncate">{p.nombre}</p>
                         <p className="text-xs text-gray-500">{p.especialidad}</p>
-                        <p className="text-xs text-gray-400">citaloapp.com/{p.slug}</p>
+                        <p className="text-xs text-gray-400">/{p.slug}</p>
                       </div>
                     </div>
-                    <Badge variant={p.activo === 'true' ? 'success' : 'secondary'}>
-                      {p.activo === 'true' ? 'Activo' : 'Inactivo'}
-                    </Badge>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge variant={p.activo === 'true' ? 'success' : 'secondary'}>
+                        {p.activo === 'true' ? 'Activo' : 'Inactivo'}
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditClick(p)}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 hover:border-red-300"
+                        onClick={() => handleDeletePro(p.slug, p.nombre)}
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -396,10 +628,10 @@ export default function AdminPage() {
   );
 }
 
-function FormField({ label, children, required }) {
+function FormField({ label, children }) {
   return (
     <div>
-      <Label>{label}{required && ' *'}</Label>
+      <Label>{label}</Label>
       {children}
     </div>
   );
