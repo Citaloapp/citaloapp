@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { crearTurno, actualizarCalendarEventId } from '@/lib/sheets';
 import { crearEvento } from '@/lib/calendar';
+import { enviarEmailConfirmacion } from '@/lib/email';
 
 export async function POST(request) {
   try {
@@ -9,6 +10,7 @@ export async function POST(request) {
     const {
       profesional_slug,
       profesional_nombre,
+      profesional_especialidad,
       profesional_whatsapp,
       profesional_calendar_id,
       duracion_turno_minutos,
@@ -87,6 +89,18 @@ export async function POST(request) {
         }),
       }).catch(err => console.error('n8n webhook failed:', err));
     }
+
+    // Enviar email de confirmación (no bloquea la respuesta si falla)
+    enviarEmailConfirmacion({
+      paciente_email,
+      paciente_nombre,
+      profesional_nombre,
+      profesional_especialidad,
+      profesional_whatsapp,
+      fecha,
+      hora,
+      turno_id: turno.id,
+    }).catch(err => console.error('Email confirmation failed:', err));
 
     return NextResponse.json({ success: true, turno });
   } catch (err) {

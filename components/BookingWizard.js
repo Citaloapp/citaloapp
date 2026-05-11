@@ -71,6 +71,7 @@ export function BookingWizard({ profesional }) {
         body: JSON.stringify({
           profesional_slug: profesional.slug,
           profesional_nombre: profesional.nombre,
+          profesional_especialidad: profesional.especialidad,
           profesional_whatsapp: profesional.telefono_whatsapp,
           profesional_calendar_id: profesional.calendar_id,
           duracion_turno_minutos: profesional.duracion_turno_minutos,
