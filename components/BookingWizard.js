@@ -42,7 +42,7 @@ export function BookingWizard({ profesional }) {
     try {
       const fecha = format(date, 'yyyy-MM-dd');
       const res = await fetch(
-        `/api/slots?calendarId=${encodeURIComponent(profesional.calendar_id)}&fecha=${fecha}&duracion=${profesional.duracion_turno_minutos}`
+        `/api/slots?calendarId=${encodeURIComponent(profesional.calendar_id)}&fecha=${fecha}&duracion=${profesional.duracion_turno_minutos}&slug=${profesional.slug}`
       );
       const data = await res.json();
       setAvailableSlots(data.slots || []);
@@ -165,21 +165,36 @@ export function BookingWizard({ profesional }) {
                 </p>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
-                  {availableSlots.map(slot => (
-                    <button
-                      key={slot}
-                      onClick={() => setSelectedTime(slot)}
-                      className={cn(
-                        'py-2 px-3 rounded-xl text-sm font-medium border transition-all',
-                        selectedTime === slot
-                          ? 'text-white border-transparent shadow-sm'
-                          : 'border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600 bg-white'
-                      )}
-                      style={selectedTime === slot ? { backgroundColor: accentColor, borderColor: accentColor } : {}}
-                    >
-                      {slot}
-                    </button>
-                  ))}
+                  {availableSlots.map(slot => {
+                    const isSelected = selectedTime === slot.hora;
+                    const isOcupado = !slot.disponible;
+                    return (
+                      <button
+                        key={slot.hora}
+                        onClick={() => !isOcupado && setSelectedTime(slot.hora)}
+                        disabled={isOcupado}
+                        title={isOcupado ? 'Ocupado' : slot.hora}
+                        className={cn(
+                          'py-2 px-3 rounded-xl text-sm font-medium border transition-all',
+                          isOcupado
+                            ? 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                            : isSelected
+                            ? 'text-white border-transparent shadow-sm'
+                            : 'border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600 bg-white'
+                        )}
+                        style={!isOcupado && isSelected ? { backgroundColor: accentColor, borderColor: accentColor } : {}}
+                      >
+                        {isOcupado ? (
+                          <span className="flex items-center justify-center gap-1">
+                            <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            <span className="line-through">{slot.hora}</span>
+                          </span>
+                        ) : slot.hora}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
