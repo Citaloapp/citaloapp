@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -314,7 +315,7 @@ export default function AdminPage() {
     <main className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 px-4 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <h1 className="font-bold text-gray-900">Panel Citalo</h1>
+          <Image src="/logo.svg" alt="Citalo" width={110} height={28} priority />
           <button
             onClick={() => { sessionStorage.removeItem(SESSION_KEY); setAuthenticated(false); }}
             className="text-sm text-gray-500 hover:text-gray-700"

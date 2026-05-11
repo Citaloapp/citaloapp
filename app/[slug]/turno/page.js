@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getProfesional } from '@/lib/sheets';
 import { BookingWizard } from '@/components/BookingWizard';
+import Navbar from '@/components/Navbar';
 
 export async function generateMetadata({ params }) {
   const profesional = await getProfesional(params.slug);
@@ -17,6 +18,7 @@ export default async function TurnoPage({ params }) {
 
   return (
     <main className="min-h-screen bg-gray-50">
+      <Navbar />
       {/* Mini header */}
       <div className="text-white py-4 px-4" style={{ backgroundColor: color }}>
         <div className="max-w-lg mx-auto flex items-center gap-3">

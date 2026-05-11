@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getProfesional } from '@/lib/sheets';
 import { Badge } from '@/components/ui/badge';
+import Navbar from '@/components/Navbar';
 
 export async function generateMetadata({ params }) {
   const profesional = await getProfesional(params.slug);
@@ -23,6 +24,7 @@ export default async function ProfesionalPage({ params }) {
 
   return (
     <main className="min-h-screen bg-gray-50">
+      <Navbar />
       {/* Hero */}
       <div className="text-white py-10 px-4" style={{ backgroundColor: color }}>
         <div className="max-w-lg mx-auto flex flex-col items-center text-center gap-4">

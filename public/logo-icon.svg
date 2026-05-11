@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" width="56" height="56" role="img" aria-label="Citalo icon">
+  <!-- Background rounded square -->
+  <rect width="56" height="56" rx="12" fill="#0ea5e9"/>
+
+  <!-- Calendar body -->
+  <rect x="8" y="14" width="40" height="34" rx="6" fill="white"/>
+  <!-- Calendar header bar -->
+  <rect x="8" y="14" width="40" height="13" rx="6" fill="#bae6fd"/>
+  <rect x="8" y="21" width="40" height="6" fill="#bae6fd"/>
+  <!-- Calendar hooks -->
+  <rect x="18" y="10" width="4" height="9" rx="2" fill="#0369a1"/>
+  <rect x="34" y="10" width="4" height="9" rx="2" fill="#0369a1"/>
+  <!-- Checkmark -->
+  <polyline points="17,37 23,44 39,28" fill="none" stroke="#0ea5e9" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

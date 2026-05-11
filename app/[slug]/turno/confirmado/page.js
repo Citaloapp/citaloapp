@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import Navbar from '@/components/Navbar';
 
 export const metadata = { title: 'Turno confirmado — Citalo' };
 
@@ -26,7 +27,9 @@ export default function ConfirmadoPage({ params, searchParams }) {
     : null;
 
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-gray-50 flex flex-col">
+      <Navbar />
+      <div className="flex-1 flex items-center justify-center p-4">
       <div className="max-w-sm w-full text-center space-y-6">
         {/* Success icon */}
         <div className="flex justify-center">
@@ -97,6 +100,7 @@ export default function ConfirmadoPage({ params, searchParams }) {
         <p className="text-xs text-gray-400">
           Recibirás una confirmación por WhatsApp.
         </p>
+      </div>
       </div>
     </main>
   );
