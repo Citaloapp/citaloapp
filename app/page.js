@@ -101,7 +101,7 @@ export default function Home() {
           <div>
             <div className="inline-flex items-center gap-2 bg-sky-100 text-sky-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-6">
               <span className="w-1.5 h-1.5 bg-sky-500 rounded-full animate-pulse" />
-              Sin instalaciones · Listo en 24hs
+              Sin instalaciones · Listo en 72hs
             </div>
             <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 leading-tight mb-6">
               Tu link de turnos,<br />
@@ -398,7 +398,7 @@ export default function Home() {
             Empezá hoy, tus pacientes<br className="hidden sm:block" /> te lo van a agradecer
           </h2>
           <p className="text-sky-100 mb-8 text-lg">
-            En menos de 24hs tenés tu link listo. Sin complicaciones.
+            En menos de 72hs tenés tu link listo. Sin complicaciones.
           </p>
           <a
             href={WA_URL}
