@@ -333,6 +333,7 @@ export default function Home() {
                 features: ['1 profesional', 'Hasta 60 turnos/mes', 'Link personalizado', 'Notificaciones WhatsApp'],
                 popular: false,
                 delay: 0,
+                url: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=7136e2b1b0e04641878d59fee648fbed',
               },
               {
                 name: 'Pro',
@@ -341,6 +342,7 @@ export default function Home() {
                 features: ['Hasta 3 profesionales', 'Turnos ilimitados', 'Recordatorios automáticos', 'Soporte prioritario'],
                 popular: true,
                 delay: 150,
+                url: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=c9cd522d9d304c0cbc2d4e47481d4aae',
               },
               {
                 name: 'Negocio',
@@ -349,8 +351,9 @@ export default function Home() {
                 features: ['Profesionales ilimitados', 'Multi-sucursal', 'Panel de estadísticas', 'Personalización de marca'],
                 popular: false,
                 delay: 300,
+                url: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=00f7cf03d1ac4bbebf9f46e934702055',
               },
-            ].map(({ name, price, desc, features, popular, delay }) => (
+            ].map(({ name, price, desc, features, popular, delay, url }) => (
               <FadeIn key={name} delay={delay} className="flex">
                 <div className={`flex-1 rounded-3xl p-8 flex flex-col ${popular ? 'bg-[#0ea5e9] text-white shadow-2xl shadow-sky-300 md:scale-105' : 'bg-white border border-gray-200'}`}>
                   {popular && (
@@ -372,7 +375,7 @@ export default function Home() {
                     ))}
                   </ul>
                   <a
-                    href={WA_URL}
+                    href={url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`block text-center py-3.5 rounded-2xl font-semibold text-sm transition-colors ${
@@ -381,7 +384,7 @@ export default function Home() {
                         : 'bg-[#0ea5e9] text-white hover:bg-[#0284c7]'
                     }`}
                   >
-                    Empezar ahora
+                    Suscribirme
                   </a>
                 </div>
               </FadeIn>
