@@ -117,16 +117,10 @@ export default function Home() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 bg-[#0ea5e9] text-white font-semibold px-7 py-4 rounded-2xl hover:bg-[#0284c7] transition-colors shadow-lg shadow-sky-200 text-base"
               >
-                Quiero mi link gratis
+                Quiero mi link
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
-              </a>
-              <a
-                href="#como-funciona"
-                className="inline-flex items-center justify-center gap-2 bg-white text-gray-700 font-semibold px-7 py-4 rounded-2xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors text-base"
-              >
-                Ver demo
               </a>
             </div>
           </div>
@@ -206,9 +200,7 @@ export default function Home() {
               'Médicos y especialistas',
               'Psicólogos',
               'Odontólogos',
-              'Peluquerías y estética',
               'Nutricionistas',
-              'Y cualquier profesional con turnos',
             ].map((item) => (
               <span key={item} className="bg-sky-50 text-sky-700 text-sm font-medium px-4 py-2 rounded-full border border-sky-100">
                 {item}
@@ -232,7 +224,7 @@ export default function Home() {
               {
                 step: '01',
                 title: 'Te creamos tu perfil',
-                desc: 'Nos mandás tus datos y en 24hs tenés tu link listo para usar.',
+                desc: 'Completás el formulario con tus datos → nosotros configuramos todo → en 72hs tu link está listo para compartir',
                 icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />,
                 delay: 0,
               },
@@ -263,6 +255,12 @@ export default function Home() {
               </FadeIn>
             ))}
           </div>
+
+          <FadeIn className="text-center mt-10">
+            <a href="/demo" className="text-[#0ea5e9] font-semibold text-sm hover:underline transition-colors">
+              Ver demo en vivo →
+            </a>
+          </FadeIn>
         </div>
       </section>
 
