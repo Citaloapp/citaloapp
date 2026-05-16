@@ -4,6 +4,19 @@
       <stop offset="0%" stop-color="#0ea5e9"/>
       <stop offset="100%" stop-color="#0284c7"/>
     </linearGradient>
+    <linearGradient id="avatar-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <clipPath id="screen-clip">
+      <rect x="554" y="34" width="140" height="244" rx="14"/>
+    </clipPath>
+    <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#00000022"/>
+    </filter>
+    <filter id="notif-shadow" x="-15%" y="-20%" width="130%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#00000030"/>
+    </filter>
   </defs>
 
   <!-- Fondo -->
@@ -12,77 +25,181 @@
   <!-- Círculos decorativos grandes (sutiles) -->
   <circle cx="-40" cy="-40" r="160" fill="white" opacity="0.05"/>
   <circle cx="860" cy="350" r="200" fill="white" opacity="0.05"/>
-  <circle cx="790" cy="25"  r="90"  fill="white" opacity="0.06"/>
   <circle cx="40"  cy="290" r="100" fill="white" opacity="0.05"/>
-  <circle cx="410" cy="-60" r="130" fill="white" opacity="0.04"/>
+  <circle cx="250" cy="-55" r="130" fill="white" opacity="0.04"/>
 
-  <!-- Puntos decorativos pequeños -->
-  <circle cx="155" cy="48"  r="5" fill="white" opacity="0.18"/>
-  <circle cx="195" cy="75"  r="3" fill="white" opacity="0.13"/>
-  <circle cx="125" cy="268" r="4" fill="white" opacity="0.16"/>
-  <circle cx="660" cy="260" r="5" fill="white" opacity="0.18"/>
-  <circle cx="695" cy="238" r="3" fill="white" opacity="0.13"/>
-  <circle cx="710" cy="52"  r="4" fill="white" opacity="0.16"/>
+  <!-- Puntos decorativos -->
+  <circle cx="48"  cy="55"  r="4" fill="white" opacity="0.16"/>
+  <circle cx="72"  cy="82"  r="3" fill="white" opacity="0.12"/>
+  <circle cx="55"  cy="258" r="4" fill="white" opacity="0.14"/>
+  <circle cx="460" cy="48"  r="3" fill="white" opacity="0.14"/>
+  <circle cx="475" cy="268" r="4" fill="white" opacity="0.14"/>
 
   <!-- Cruz médica decorativa — izquierda -->
-  <rect x="75"  y="136" width="20" height="4" rx="2" fill="white" opacity="0.2"/>
-  <rect x="83"  y="128" width="4"  height="20" rx="2" fill="white" opacity="0.2"/>
+  <rect x="32"  y="149" width="18" height="4" rx="2" fill="white" opacity="0.2"/>
+  <rect x="39"  y="142" width="4"  height="18" rx="2" fill="white" opacity="0.2"/>
 
-  <!-- Cruz médica decorativa — derecha -->
-  <rect x="727" y="136" width="20" height="4" rx="2" fill="white" opacity="0.2"/>
-  <rect x="735" y="128" width="4"  height="20" rx="2" fill="white" opacity="0.2"/>
-
-  <!-- ─── LOGO (versión blanca, centrado en x≈410) ─── -->
-  <!-- Calendario: x_offset=336, y_offset=18 respecto al logo original -->
+  <!-- ─── LOGO izquierda (versión blanca) ─── -->
+  <!-- x_offset=145, y_offset=18 respecto al logo original -->
   <!-- Cuerpo del calendario -->
-  <rect x="344" y="28" width="40" height="38" rx="6" fill="white"/>
-  <!-- Barra superior del calendario -->
-  <rect x="344" y="28" width="40" height="13" rx="6" fill="white" opacity="0.75"/>
-  <rect x="344" y="35" width="40" height="6"  fill="white" opacity="0.75"/>
+  <rect x="149" y="28" width="40" height="38" rx="6" fill="white"/>
+  <!-- Barra superior -->
+  <rect x="149" y="28" width="40" height="13" rx="6" fill="white" opacity="0.72"/>
+  <rect x="149" y="35" width="40" height="6"  fill="white" opacity="0.72"/>
   <!-- Ganchos -->
-  <rect x="354" y="24" width="4" height="10" rx="2" fill="white" opacity="0.65"/>
-  <rect x="370" y="24" width="4" height="10" rx="2" fill="white" opacity="0.65"/>
-  <!-- Tilde interna (en azul sobre el blanco del calendario) -->
-  <polyline points="350,52 356,59 370,45" fill="none" stroke="#0284c7" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="159" y="24" width="4" height="10" rx="2" fill="white" opacity="0.62"/>
+  <rect x="175" y="24" width="4" height="10" rx="2" fill="white" opacity="0.62"/>
+  <!-- Tilde en azul sobre fondo blanco del calendario -->
+  <polyline points="155,52 161,59 175,45"
+            fill="none" stroke="#0284c7" stroke-width="3.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
 
-  <!-- Wordmark "Citalo" en blanco -->
-  <text x="396" y="57"
+  <!-- Wordmark "Citaloapp" en blanco -->
+  <text x="201" y="56"
         font-family="'Segoe UI', Arial, sans-serif"
-        font-size="27" font-weight="700" letter-spacing="-0.5"
-        fill="white">Citalo</text>
+        font-size="26" font-weight="700" letter-spacing="-0.5"
+        fill="white">Citaloapp</text>
 
-  <!-- ─── TITULAR PRINCIPAL (2 líneas) ─── -->
-  <text x="410" y="128"
+  <!-- ─── TITULAR PRINCIPAL ─── -->
+  <text x="250" y="116"
         font-family="'Segoe UI', Arial, sans-serif"
-        font-size="36" font-weight="800" letter-spacing="-0.5"
-        fill="white" text-anchor="middle">
-    Tu link de turnos,
-  </text>
-  <text x="410" y="172"
+        font-size="30" font-weight="800" letter-spacing="-0.5"
+        fill="white" text-anchor="middle">Tu link de turnos,</text>
+  <text x="250" y="151"
         font-family="'Segoe UI', Arial, sans-serif"
-        font-size="36" font-weight="800" letter-spacing="-0.5"
-        fill="white" text-anchor="middle">
-    listo para compartir
-  </text>
+        font-size="30" font-weight="800" letter-spacing="-0.5"
+        fill="white" text-anchor="middle">listo para compartir</text>
 
-  <!-- ─── TEXTO SECUNDARIO ─── -->
-  <text x="410" y="215"
+  <!-- ─── TEXTO SECUNDARIO (2 líneas) ─── -->
+  <text x="250" y="190"
         font-family="'Segoe UI', Arial, sans-serif"
-        font-size="16" font-weight="400"
+        font-size="13.5" font-weight="400"
         fill="white" opacity="0.85" text-anchor="middle">
-    Compartí tu link y tus pacientes se agendan solos. Sin llamadas, sin mensajes.
-  </text>
+    Compartí tu link y tus pacientes se agendan solos.</text>
+  <text x="250" y="208"
+        font-family="'Segoe UI', Arial, sans-serif"
+        font-size="13.5" font-weight="400"
+        fill="white" opacity="0.85" text-anchor="middle">
+    Sin llamadas, sin mensajes.</text>
 
   <!-- Separador de puntos -->
-  <circle cx="401" cy="240" r="2.5" fill="white" opacity="0.4"/>
-  <circle cx="410" cy="240" r="2.5" fill="white" opacity="0.4"/>
-  <circle cx="419" cy="240" r="2.5" fill="white" opacity="0.4"/>
+  <circle cx="241" cy="234" r="2.5" fill="white" opacity="0.4"/>
+  <circle cx="250" cy="234" r="2.5" fill="white" opacity="0.4"/>
+  <circle cx="259" cy="234" r="2.5" fill="white" opacity="0.4"/>
 
   <!-- ─── URL ─── -->
-  <text x="410" y="276"
+  <text x="250" y="268"
         font-family="'Segoe UI', Arial, sans-serif"
-        font-size="18" font-weight="600" letter-spacing="1.5"
-        fill="white" opacity="0.92" text-anchor="middle">
-    citaloapp.com.ar
-  </text>
+        font-size="15" font-weight="600" letter-spacing="1.5"
+        fill="white" opacity="0.92" text-anchor="middle">citaloapp.com.ar</text>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- ─── MOCKUP TELÉFONO (derecha) ─── -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <!-- Marco del teléfono -->
+  <rect x="548" y="28" width="152" height="256" rx="22" fill="#1e293b" filter="url(#card-shadow)"/>
+  <!-- Botón lateral -->
+  <rect x="700" y="90"  width="4" height="28" rx="2" fill="#0f172a"/>
+  <rect x="544" y="85"  width="4" height="20" rx="2" fill="#0f172a"/>
+  <rect x="544" y="112" width="4" height="20" rx="2" fill="#0f172a"/>
+
+  <!-- Pantalla base (blanca) -->
+  <rect x="554" y="34" width="140" height="244" rx="14" fill="white"/>
+
+  <!-- Contenido de la pantalla (con clip) -->
+  <g clip-path="url(#screen-clip)">
+
+    <!-- Header celeste -->
+    <rect x="554" y="34"  width="140" height="62" fill="#0ea5e9"/>
+    <!-- esquinas cuadradas en la parte baja del header -->
+    <rect x="554" y="60"  width="140" height="36" fill="#0ea5e9"/>
+
+    <!-- Hora -->
+    <text x="563" y="48"
+          font-family="Arial, sans-serif" font-size="7.5"
+          fill="white" opacity="0.75">9:41</text>
+
+    <!-- Íconos de estado (derecha) -->
+    <rect x="671" y="41" width="14" height="7" rx="2" fill="white" opacity="0.5"/>
+    <rect x="672" y="42" width="10" height="5" rx="1" fill="white" opacity="0.7"/>
+    <rect x="686" y="43" width="2"  height="4" rx="1" fill="white" opacity="0.5"/>
+
+    <!-- Barra de URL -->
+    <rect x="563" y="54" width="122" height="14" rx="7" fill="white" opacity="0.2"/>
+    <!-- Candado (pequeño) -->
+    <rect x="568" y="58" width="4" height="4" rx="1" fill="white" opacity="0.7"/>
+    <path d="M568 58 Q570 55 572 58" fill="none" stroke="white" stroke-width="1" opacity="0.7"/>
+    <!-- URL -->
+    <text x="576" y="64"
+          font-family="Arial, sans-serif" font-size="6.5"
+          fill="white" font-weight="500">citaloapp.com.ar</text>
+
+    <!-- ── Tarjeta de perfil ── -->
+    <rect x="561" y="88" width="126" height="148" rx="11"
+          fill="#e2e8f0" opacity="0.4"/>
+    <rect x="560" y="86" width="126" height="148" rx="11" fill="white"/>
+
+    <!-- Avatar circular con gradiente -->
+    <circle cx="580" cy="111" r="17" fill="url(#avatar-grad)"/>
+    <!-- Foto placeholder: iniciales -->
+    <text x="580" y="115"
+          font-family="Arial, sans-serif" font-size="13" font-weight="700"
+          fill="white" text-anchor="middle">AG</text>
+
+    <!-- Nombre y especialidad -->
+    <text x="602" y="106"
+          font-family="'Segoe UI', Arial, sans-serif"
+          font-size="8" font-weight="700" fill="#1e293b">Dra. Ana García</text>
+    <text x="602" y="119"
+          font-family="'Segoe UI', Arial, sans-serif"
+          font-size="7" fill="#0ea5e9">Dermatóloga</text>
+
+    <!-- Separador -->
+    <line x1="568" y1="133" x2="678" y2="133" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Slots de turnos disponibles -->
+    <rect x="568" y="139" width="52" height="13" rx="6" fill="#f0f9ff"/>
+    <text x="594" y="148"
+          font-family="Arial, sans-serif" font-size="6.5"
+          fill="#0ea5e9" text-anchor="middle">Lun 10:00</text>
+
+    <rect x="626" y="139" width="52" height="13" rx="6" fill="#f0f9ff"/>
+    <text x="652" y="148"
+          font-family="Arial, sans-serif" font-size="6.5"
+          fill="#0ea5e9" text-anchor="middle">Mar 14:30</text>
+
+    <rect x="568" y="157" width="52" height="13" rx="6" fill="#f0f9ff"/>
+    <text x="594" y="166"
+          font-family="Arial, sans-serif" font-size="6.5"
+          fill="#0ea5e9" text-anchor="middle">Jue 09:00</text>
+
+    <!-- Botón "Sacar turno" -->
+    <rect x="568" y="181" width="114" height="20" rx="10" fill="#0ea5e9"/>
+    <text x="625" y="194"
+          font-family="'Segoe UI', Arial, sans-serif"
+          font-size="8" font-weight="700"
+          fill="white" text-anchor="middle">Sacar turno</text>
+
+    <!-- Zona inferior de pantalla -->
+    <rect x="554" y="234" width="140" height="44" fill="#f8fafc"/>
+
+  </g><!-- fin clip -->
+
+  <!-- ── Notificación flotante "Turno confirmado" ── -->
+  <rect x="656" y="57" width="122" height="38" rx="10"
+        fill="white" filter="url(#notif-shadow)"/>
+  <!-- Círculo verde -->
+  <circle cx="672" cy="76" r="10" fill="#dcfce7"/>
+  <polyline points="667,76 670,79 677,72"
+            fill="none" stroke="#16a34a" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Texto notificación -->
+  <text x="686" y="72"
+        font-family="'Segoe UI', Arial, sans-serif"
+        font-size="7.5" font-weight="700" fill="#1e293b">Turno confirmado ✓</text>
+  <text x="686" y="85"
+        font-family="'Segoe UI', Arial, sans-serif"
+        font-size="6.5" fill="#64748b">María López</text>
+
 </svg>
