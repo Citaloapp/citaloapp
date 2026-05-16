@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 312" width="820" height="312">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo -->
+  <rect width="820" height="312" fill="url(#bg)"/>
+
+  <!-- Círculos decorativos grandes (sutiles) -->
+  <circle cx="-40" cy="-40" r="160" fill="white" opacity="0.05"/>
+  <circle cx="860" cy="350" r="200" fill="white" opacity="0.05"/>
+  <circle cx="790" cy="25"  r="90"  fill="white" opacity="0.06"/>
+  <circle cx="40"  cy="290" r="100" fill="white" opacity="0.05"/>
+  <circle cx="410" cy="-60" r="130" fill="white" opacity="0.04"/>
+
+  <!-- Puntos decorativos pequeños -->
+  <circle cx="155" cy="48"  r="5" fill="white" opacity="0.18"/>
+  <circle cx="195" cy="75"  r="3" fill="white" opacity="0.13"/>
+  <circle cx="125" cy="268" r="4" fill="white" opacity="0.16"/>
+  <circle cx="660" cy="260" r="5" fill="white" opacity="0.18"/>
+  <circle cx="695" cy="238" r="3" fill="white" opacity="0.13"/>
+  <circle cx="710" cy="52"  r="4" fill="white" opacity="0.16"/>
+
+  <!-- Cruz médica decorativa — izquierda -->
+  <rect x="75"  y="136" width="20" height="4" rx="2" fill="white" opacity="0.2"/>
+  <rect x="83"  y="128" width="4"  height="20" rx="2" fill="white" opacity="0.2"/>
+
+  <!-- Cruz médica decorativa — derecha -->
+  <rect x="727" y="136" width="20" height="4" rx="2" fill="white" opacity="0.2"/>
+  <rect x="735" y="128" width="4"  height="20" rx="2" fill="white" opacity="0.2"/>
+
+  <!-- ─── LOGO (versión blanca, centrado en x≈410) ─── -->
+  <!-- Calendario: x_offset=336, y_offset=18 respecto al logo original -->
+  <!-- Cuerpo del calendario -->
+  <rect x="344" y="28" width="40" height="38" rx="6" fill="white"/>
+  <!-- Barra superior del calendario -->
+  <rect x="344" y="28" width="40" height="13" rx="6" fill="white" opacity="0.75"/>
+  <rect x="344" y="35" width="40" height="6"  fill="white" opacity="0.75"/>
+  <!-- Ganchos -->
+  <rect x="354" y="24" width="4" height="10" rx="2" fill="white" opacity="0.65"/>
+  <rect x="370" y="24" width="4" height="10" rx="2" fill="white" opacity="0.65"/>
+  <!-- Tilde interna (en azul sobre el blanco del calendario) -->
+  <polyline points="350,52 356,59 370,45" fill="none" stroke="#0284c7" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Wordmark "Citalo" en blanco -->
+  <text x="396" y="57"
+        font-family="'Segoe UI', Arial, sans-serif"
+        font-size="27" font-weight="700" letter-spacing="-0.5"
+        fill="white">Citalo</text>
+
+  <!-- ─── TITULAR PRINCIPAL (2 líneas) ─── -->
+  <text x="410" y="128"
+        font-family="'Segoe UI', Arial, sans-serif"
+        font-size="36" font-weight="800" letter-spacing="-0.5"
+        fill="white" text-anchor="middle">
+    Tu link de turnos,
+  </text>
+  <text x="410" y="172"
+        font-family="'Segoe UI', Arial, sans-serif"
+        font-size="36" font-weight="800" letter-spacing="-0.5"
+        fill="white" text-anchor="middle">
+    listo para compartir
+  </text>
+
+  <!-- ─── TEXTO SECUNDARIO ─── -->
+  <text x="410" y="215"
+        font-family="'Segoe UI', Arial, sans-serif"
+        font-size="16" font-weight="400"
+        fill="white" opacity="0.85" text-anchor="middle">
+    Compartí tu link y tus pacientes se agendan solos. Sin llamadas, sin mensajes.
+  </text>
+
+  <!-- Separador de puntos -->
+  <circle cx="401" cy="240" r="2.5" fill="white" opacity="0.4"/>
+  <circle cx="410" cy="240" r="2.5" fill="white" opacity="0.4"/>
+  <circle cx="419" cy="240" r="2.5" fill="white" opacity="0.4"/>
+
+  <!-- ─── URL ─── -->
+  <text x="410" y="276"
+        font-family="'Segoe UI', Arial, sans-serif"
+        font-size="18" font-weight="600" letter-spacing="1.5"
+        fill="white" opacity="0.92" text-anchor="middle">
+    citaloapp.com.ar
+  </text>
+</svg>
