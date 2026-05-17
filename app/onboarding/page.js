@@ -544,7 +544,7 @@ function SearchSelect({ label, placeholder, options, value, onChange }) {
         {value && !open && (
           <button
             type="button"
-            onMouseDown={e => { e.preventDefault(); onChange(''); setQuery(''); }}
+            onPointerDown={e => { e.preventDefault(); onChange(''); setQuery(''); }}
             className="absolute inset-y-0 right-3 flex items-center text-gray-300 hover:text-gray-500"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -557,7 +557,7 @@ function SearchSelect({ label, placeholder, options, value, onChange }) {
             {filtered.map(option => (
               <li
                 key={option}
-                onMouseDown={() => handleSelect(option)}
+                onPointerDown={e => { e.preventDefault(); handleSelect(option); }}
                 className="px-4 py-2.5 text-sm text-gray-700 hover:bg-sky-50 hover:text-[#0ea5e9] cursor-pointer transition-colors first:rounded-t-xl last:rounded-b-xl"
               >
                 {option}
@@ -604,7 +604,7 @@ function MultiSearchSelect({ label, placeholder, options, selected, onChange }) 
               {os}
               <button
                 type="button"
-                onMouseDown={e => { e.preventDefault(); onChange(selected.filter(s => s !== os)); }}
+                onPointerDown={e => { e.preventDefault(); onChange(selected.filter(s => s !== os)); }}
                 className="text-sky-400 hover:text-sky-700 transition-colors"
               >
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -636,7 +636,7 @@ function MultiSearchSelect({ label, placeholder, options, selected, onChange }) 
             {filtered.length > 0 ? filtered.map(option => (
               <li
                 key={option}
-                onMouseDown={() => toggle(option)}
+                onPointerDown={e => { e.preventDefault(); toggle(option); }}
                 className="px-4 py-2.5 text-sm text-gray-700 hover:bg-sky-50 hover:text-[#0ea5e9] cursor-pointer transition-colors first:rounded-t-xl last:rounded-b-xl"
               >
                 {option}
