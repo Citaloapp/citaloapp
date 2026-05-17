@@ -55,6 +55,7 @@ export async function POST(request) {
         paciente_email,
         obra_social,
         motivo,
+        servicio_nombre,
         fecha,
         hora,
       });
