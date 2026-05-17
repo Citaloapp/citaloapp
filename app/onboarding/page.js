@@ -6,10 +6,41 @@ import { cn } from '@/lib/utils';
 
 const DURACIONES = ['20', '30', '45', '60'];
 const DURACIONES_SERVICIO = ['20', '30', '45', '60', '90'];
-
 const STEPS = ['Tus datos', 'Tu perfil', 'Confirmar'];
-
 const SERVICIO_VACIO = { nombre: '', duracion: '30', precio: '' };
+
+const ESPECIALIDADES = [
+  'Alergología', 'Anatomía patológica', 'Anestesiología', 'Cardiología',
+  'Cirugía cardiovascular', 'Cirugía general', 'Cirugía plástica',
+  'Clínica médica', 'Dermatología', 'Endocrinología', 'Estética corporal',
+  'Estética facial', 'Fonoaudiología', 'Gastroenterología', 'Geriatría',
+  'Ginecología', 'Hematología', 'Infectología', 'Inmunología',
+  'Kinesiología', 'Medicina del trabajo', 'Medicina general', 'Medicina legal',
+  'Nefrología', 'Neonatología', 'Neumología', 'Neurología', 'Neurocirugía',
+  'Nutrición', 'Nutricionista', 'Obstetricia', 'Odontología',
+  'Odontología estética', 'Oftalmología', 'Oncología',
+  'Ortopedia y traumatología', 'Otorrinolaringología', 'Pediatría',
+  'Podología', 'Psicología', 'Psiquiatría', 'Radiología', 'Rehabilitación',
+  'Reumatología', 'Terapia ocupacional', 'Urología',
+];
+
+const OBRAS_SOCIALES = [
+  'ACCORD', 'ACCORD Salud', 'AMEG', 'AMSAFE', 'APS', 'APRES', 'APROSS', 'ATSA',
+  'Avalian', 'BANCOSUR', 'BASART', 'CAMECE', 'CEMIC', 'CESALUD', 'CIMECO',
+  'COESBA', 'COLAGRO', 'DAMSU', 'DAOM', 'DASPU', 'DASUTEN', 'DOSEP', 'DOSPU',
+  'DOSS', 'DOSUBA', 'ECOMEDIC', 'EJÉRCITO', 'EMERGENCIAS', 'EXPERTA', 'FATSA',
+  'FEDERADA SALUD', 'FEHGRA', 'FEMECON', 'FLACSO', 'FOETRA', 'Galeno',
+  'GESTAR', 'H2O', 'HOMINIS', 'Hospital Alemán', 'Hospital Italiano', 'IOMA',
+  'JOSPER', 'LIGHT', 'LUIS PASTEUR', 'Medicus', 'MEDIFE', 'MEDIFÉ', 'MEDISUR',
+  'MEDIVAC', 'MUTUAL', 'OMINT', 'OSDIPP', 'OSDE', 'OSEF', 'OSFA', 'OSFATLYF',
+  'OSFATUN', 'OSFEPSA', 'OSIM', 'OSMATA', 'OSMEDICA', 'OSPAC', 'OSPAD',
+  'OSPE', 'OSPIA', 'OSPIP', 'OSPIT', 'OSPLAD', 'OSPM', 'OSPORH', 'OSPOS',
+  'OSPRERA', 'OSPSA', 'OSPUAYE', 'OSTEP', 'OSUTHGRA', 'PAMI', 'PAMI CONVENIO',
+  'PASALUD', 'PATROL', 'PODER JUDICIAL', 'POLICIAL', 'PREMEDIC',
+  'PREVENCIÓN SALUD', 'PROVINCIAL', 'Sancor Salud', 'SASM', 'SEGUIR',
+  'SERVIMED', 'SIMPLE', 'SINDICATO', 'SPE', 'STAFF MEDICO', 'Swiss Medical',
+  'UPCN', 'VALORA', 'VIDA', 'VITAL', 'WITCEL', 'WPP', 'Y-TEC',
+];
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(0);
@@ -28,7 +59,7 @@ export default function OnboardingPage() {
   const [fotoFile, setFotoFile] = useState(null);
   const [fotoPreview, setFotoPreview] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  const [obrasSociales, setObrasSociales] = useState('');
+  const [obrasSocialesSeleccionadas, setObrasSocialesSeleccionadas] = useState([]);
   const [duracion, setDuracion] = useState('30');
   const [colorMarca, setColorMarca] = useState('#0ea5e9');
   const [servicios, setServicios] = useState([{ ...SERVICIO_VACIO }]);
@@ -68,7 +99,7 @@ export default function OnboardingPage() {
       fd.append('telefono', telefono);
       fd.append('email', email);
       fd.append('descripcion', descripcion);
-      fd.append('obras_sociales', obrasSociales);
+      fd.append('obras_sociales', obrasSocialesSeleccionadas.join(', '));
       fd.append('duracion_turno', duracion);
       fd.append('color_marca', colorMarca);
       fd.append('servicios', JSON.stringify(servicios.filter(s => s.nombre.trim())));
@@ -162,7 +193,13 @@ export default function OnboardingPage() {
 
             <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
               <Field label="Nombre con título *" placeholder="Ej: Dra. Ana García" value={nombre} onChange={setNombre} />
-              <Field label="Especialidad *" placeholder="Ej: Cardiología, Psicología, Odontología" value={especialidad} onChange={setEspecialidad} />
+              <SearchSelect
+                label="Especialidad *"
+                placeholder="Buscá tu especialidad..."
+                options={ESPECIALIDADES}
+                value={especialidad}
+                onChange={setEspecialidad}
+              />
               <Field label="Número de matrícula" placeholder="Ej: 12345" value={matricula} onChange={setMatricula} />
               <Field label="WhatsApp *" type="tel" placeholder="Ej: 1123456789 (sin 0 ni 15)" value={telefono} onChange={setTelefono} />
               <Field label="Email *" type="email" placeholder="tu@email.com" value={email} onChange={setEmail} />
@@ -241,17 +278,13 @@ export default function OnboardingPage() {
               </div>
 
               {/* Obras sociales */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Obras sociales que atendés</label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]"
-                  placeholder="Ej: OSDE, Swiss Medical, IOMA (separadas por coma)"
-                  value={obrasSociales}
-                  onChange={e => setObrasSociales(e.target.value)}
-                />
-                <p className="text-xs text-gray-400 mt-1">Separalas con coma. Dejalo vacío si atendés solo particular.</p>
-              </div>
+              <MultiSearchSelect
+                label="Obras sociales que atendés"
+                placeholder="Buscá y seleccioná obras sociales..."
+                options={OBRAS_SOCIALES}
+                selected={obrasSocialesSeleccionadas}
+                onChange={setObrasSocialesSeleccionadas}
+              />
 
               {/* Duración */}
               <div>
@@ -325,7 +358,6 @@ export default function OnboardingPage() {
                           type="button"
                           onClick={() => removeServicio(i)}
                           className="text-gray-300 hover:text-red-400 transition-colors shrink-0"
-                          aria-label="Eliminar servicio"
                         >
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -409,7 +441,18 @@ export default function OnboardingPage() {
               <SummaryRow label="WhatsApp" value={telefono} />
               <SummaryRow label="Email" value={email} />
               {descripcion && <SummaryRow label="Descripción" value={descripcion} />}
-              {obrasSociales && <SummaryRow label="Obras sociales" value={obrasSociales} />}
+              {obrasSocialesSeleccionadas.length > 0 && (
+                <div className="px-5 py-3">
+                  <p className="text-sm text-gray-500 mb-2">Obras sociales</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {obrasSocialesSeleccionadas.map(os => (
+                      <span key={os} className="bg-sky-50 text-sky-700 text-xs font-medium px-2.5 py-1 rounded-full border border-sky-100">
+                        {os}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               <SummaryRow label="Duración de turno" value={`${duracion} minutos`} />
               <div className="flex justify-between items-center px-5 py-3">
                 <span className="text-sm text-gray-500 shrink-0">Color de perfil</span>
@@ -463,6 +506,153 @@ export default function OnboardingPage() {
     </div>
   );
 }
+
+// ── Selector con buscador (selección única) ───────────────────────────────
+
+function SearchSelect({ label, placeholder, options, value, onChange }) {
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+
+  const filtered = options
+    .filter(o => o.toLowerCase().includes(query.toLowerCase()))
+    .slice(0, 12);
+
+  function handleSelect(option) {
+    onChange(option);
+    setQuery('');
+    setOpen(false);
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+      <div className="relative">
+        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <input
+          type="text"
+          className="w-full border border-gray-300 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]"
+          placeholder={value || placeholder}
+          value={open ? query : value}
+          onFocus={() => { setOpen(true); setQuery(''); }}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          onChange={e => setQuery(e.target.value)}
+        />
+        {value && !open && (
+          <button
+            type="button"
+            onMouseDown={e => { e.preventDefault(); onChange(''); setQuery(''); }}
+            className="absolute inset-y-0 right-3 flex items-center text-gray-300 hover:text-gray-500"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
+        {open && filtered.length > 0 && (
+          <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+            {filtered.map(option => (
+              <li
+                key={option}
+                onMouseDown={() => handleSelect(option)}
+                className="px-4 py-2.5 text-sm text-gray-700 hover:bg-sky-50 hover:text-[#0ea5e9] cursor-pointer transition-colors first:rounded-t-xl last:rounded-b-xl"
+              >
+                {option}
+              </li>
+            ))}
+          </ul>
+        )}
+        {open && query && filtered.length === 0 && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg px-4 py-3 text-sm text-gray-400">
+            Sin resultados para "{query}"
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Selector múltiple con buscador y badges ───────────────────────────────
+
+function MultiSearchSelect({ label, placeholder, options, selected, onChange }) {
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+
+  const filtered = options
+    .filter(o => !selected.includes(o) && o.toLowerCase().includes(query.toLowerCase()))
+    .slice(0, 12);
+
+  function toggle(option) {
+    onChange(selected.includes(option)
+      ? selected.filter(s => s !== option)
+      : [...selected, option]
+    );
+    setQuery('');
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {selected.map(os => (
+            <span key={os} className="inline-flex items-center gap-1 bg-sky-50 text-sky-700 text-xs font-medium pl-2.5 pr-1.5 py-1 rounded-full border border-sky-100">
+              {os}
+              <button
+                type="button"
+                onMouseDown={e => { e.preventDefault(); onChange(selected.filter(s => s !== os)); }}
+                className="text-sky-400 hover:text-sky-700 transition-colors"
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="relative">
+        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <input
+          type="text"
+          className="w-full border border-gray-300 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]"
+          placeholder={selected.length > 0 ? 'Agregar otra...' : placeholder}
+          value={query}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          onChange={e => setQuery(e.target.value)}
+        />
+        {open && (filtered.length > 0 || query) && (
+          <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+            {filtered.length > 0 ? filtered.map(option => (
+              <li
+                key={option}
+                onMouseDown={() => toggle(option)}
+                className="px-4 py-2.5 text-sm text-gray-700 hover:bg-sky-50 hover:text-[#0ea5e9] cursor-pointer transition-colors first:rounded-t-xl last:rounded-b-xl"
+              >
+                {option}
+              </li>
+            )) : (
+              <li className="px-4 py-3 text-sm text-gray-400">Sin resultados para "{query}"</li>
+            )}
+          </ul>
+        )}
+      </div>
+      <p className="text-xs text-gray-400 mt-1">Dejalo vacío si atendés solo particular.</p>
+    </div>
+  );
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
 
 function Field({ label, placeholder, value, onChange, type = 'text' }) {
   return (
