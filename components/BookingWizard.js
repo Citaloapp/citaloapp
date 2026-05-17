@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -12,37 +12,59 @@ import { Select } from './ui/select';
 import { Textarea } from './ui/textarea';
 import { cn } from '@/lib/utils';
 
-const STEPS = ['Fecha y hora', 'Tus datos', 'Confirmar'];
-
 export function BookingWizard({ profesional }) {
   const router = useRouter();
-  const [step, setStep] = useState(1);
+
+  // Servicios
+  const [servicios, setServicios] = useState([]);
+  const [serviciosLoaded, setServiciosLoaded] = useState(false);
+  const [selectedServicio, setSelectedServicio] = useState(null);
+
+  // Wizard state
+  const [step, setStep] = useState(null); // null mientras carga
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [formData, setFormData] = useState({
-    nombre: '',
-    telefono: '',
-    email: '',
-    obra_social: '',
-    motivo: '',
+    nombre: '', telefono: '', email: '', obra_social: '', motivo: '',
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const accentColor = profesional.color_marca || '#2563eb';
+  const hasServicios = servicios.length > 0;
+  const duracion = selectedServicio
+    ? parseInt(selectedServicio.duracion_minutos)
+    : profesional.duracion_turno_minutos;
+
+  const STEPS = hasServicios
+    ? ['Servicio', 'Fecha y hora', 'Tus datos', 'Confirmar']
+    : ['Fecha y hora', 'Tus datos', 'Confirmar'];
+  const stepBase = hasServicios ? 0 : 1;
+
+  // Cargar servicios al montar — si no hay, saltar al paso 1
+  useEffect(() => {
+    fetch(`/api/servicios?slug=${profesional.slug}`)
+      .then(r => r.json())
+      .then(data => {
+        const svcs = data.servicios || [];
+        setServicios(svcs);
+        setStep(svcs.length > 0 ? 0 : 1);
+      })
+      .catch(() => setStep(1))
+      .finally(() => setServiciosLoaded(true));
+  }, [profesional.slug]);
 
   async function handleDateSelect(date) {
     setSelectedDate(date);
     setSelectedTime(null);
     setAvailableSlots([]);
     setLoadingSlots(true);
-
     try {
       const fecha = format(date, 'yyyy-MM-dd');
       const res = await fetch(
-        `/api/slots?calendarId=${encodeURIComponent(profesional.calendar_id)}&fecha=${fecha}&duracion=${profesional.duracion_turno_minutos}&slug=${profesional.slug}`
+        `/api/slots?calendarId=${encodeURIComponent(profesional.calendar_id)}&fecha=${fecha}&duracion=${duracion}&slug=${profesional.slug}`
       );
       const data = await res.json();
       setAvailableSlots(data.slots || []);
@@ -63,7 +85,6 @@ export function BookingWizard({ profesional }) {
   async function handleConfirm() {
     setSubmitting(true);
     setError('');
-
     try {
       const res = await fetch('/api/turnos', {
         method: 'POST',
@@ -74,7 +95,8 @@ export function BookingWizard({ profesional }) {
           profesional_especialidad: profesional.especialidad,
           profesional_whatsapp: profesional.telefono_whatsapp,
           profesional_calendar_id: profesional.calendar_id,
-          duracion_turno_minutos: profesional.duracion_turno_minutos,
+          duracion_turno_minutos: duracion,
+          servicio_nombre: selectedServicio?.nombre || '',
           paciente_nombre: formData.nombre,
           paciente_telefono: formData.telefono,
           paciente_email: formData.email,
@@ -109,16 +131,26 @@ export function BookingWizard({ profesional }) {
     ? format(selectedDate, "EEEE d 'de' MMMM", { locale: es })
     : '';
 
+  // Loading inicial
+  if (!serviciosLoaded) {
+    return (
+      <div className="flex justify-center py-16">
+        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-lg mx-auto px-4 pb-16">
+
       {/* Steps indicator */}
       <div className="flex items-center justify-center gap-2 py-6">
         {STEPS.map((label, i) => {
-          const num = i + 1;
-          const active = step === num;
-          const done = step > num;
+          const stepNum = i + stepBase;
+          const active = step === stepNum;
+          const done = step > stepNum;
           return (
-            <div key={num} className="flex items-center gap-2">
+            <div key={stepNum} className="flex items-center gap-2">
               <div className="flex items-center gap-2">
                 <div
                   className={cn(
@@ -133,7 +165,7 @@ export function BookingWizard({ profesional }) {
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
-                  ) : num}
+                  ) : i + 1}
                 </div>
                 <span className={cn('text-xs hidden sm:block', active ? 'font-semibold text-gray-900' : 'text-gray-400')}>
                   {label}
@@ -147,10 +179,86 @@ export function BookingWizard({ profesional }) {
         })}
       </div>
 
-      {/* Step 1: Date & Time */}
+      {/* ── PASO 0: Elegir servicio ── */}
+      {step === 0 && hasServicios && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-gray-900">Elegí un servicio</h2>
+          <div className="space-y-3">
+            {servicios.map(s => {
+              const isSelected = selectedServicio?.id === s.id;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => setSelectedServicio(s)}
+                  className={cn(
+                    'w-full text-left rounded-2xl border-2 p-4 transition-all',
+                    isSelected ? 'border-transparent shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300'
+                  )}
+                  style={isSelected ? { borderColor: accentColor, backgroundColor: `${accentColor}10` } : {}}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-gray-900">{s.nombre}</p>
+                      {s.descripcion && (
+                        <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{s.descripcion}</p>
+                      )}
+                      <div className="flex items-center gap-3 mt-2">
+                        <span className="text-xs text-gray-500">⏱ {s.duracion_minutos} min</span>
+                        {s.precio && (
+                          <span className="text-xs font-semibold text-gray-700">$ {Number(s.precio).toLocaleString('es-AR')}</span>
+                        )}
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <div
+                        className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                        style={{ backgroundColor: accentColor }}
+                      >
+                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <Button
+            className="w-full"
+            disabled={!selectedServicio}
+            onClick={() => setStep(1)}
+            style={selectedServicio ? { backgroundColor: accentColor } : {}}
+          >
+            Siguiente
+          </Button>
+        </div>
+      )}
+
+      {/* ── PASO 1: Fecha y hora ── */}
       {step === 1 && (
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-gray-900">Elegí fecha y hora</h2>
+          {hasServicios ? (
+            <div className="flex items-center gap-3 mb-2">
+              <button onClick={() => setStep(0)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <h2 className="text-xl font-bold text-gray-900">Elegí fecha y hora</h2>
+            </div>
+          ) : (
+            <h2 className="text-xl font-bold text-gray-900">Elegí fecha y hora</h2>
+          )}
+
+          {selectedServicio && (
+            <div className="rounded-xl px-4 py-2.5 text-sm flex items-center gap-2" style={{ backgroundColor: `${accentColor}12`, color: accentColor }}>
+              <span className="font-medium">{selectedServicio.nombre}</span>
+              <span className="opacity-50">·</span>
+              <span>{selectedServicio.duracion_minutos} min</span>
+            </div>
+          )}
+
           <CalendarPicker onDateSelect={handleDateSelect} selectedDate={selectedDate} />
 
           {selectedDate && (
@@ -161,9 +269,7 @@ export function BookingWizard({ profesional }) {
                   <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : availableSlots.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-4">
-                  No hay turnos disponibles para este día.
-                </p>
+                <p className="text-sm text-gray-500 text-center py-4">No hay turnos disponibles para este día.</p>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
                   {availableSlots.map(slot => {
@@ -174,7 +280,6 @@ export function BookingWizard({ profesional }) {
                         key={slot.hora}
                         onClick={() => !isOcupado && setSelectedTime(slot.hora)}
                         disabled={isOcupado}
-                        title={isOcupado ? 'Ocupado' : slot.hora}
                         className={cn(
                           'py-2 px-3 rounded-xl text-sm font-medium border transition-all',
                           isOcupado
@@ -212,7 +317,7 @@ export function BookingWizard({ profesional }) {
         </div>
       )}
 
-      {/* Step 2: Patient data */}
+      {/* ── PASO 2: Datos del paciente ── */}
       {step === 2 && (
         <div className="space-y-4">
           <div className="flex items-center gap-3 mb-2">
@@ -226,46 +331,26 @@ export function BookingWizard({ profesional }) {
 
           <div className="bg-blue-50 rounded-xl px-4 py-3 text-sm text-blue-700 capitalize">
             📅 {fechaFormateada} a las {selectedTime}
+            {selectedServicio && <span className="ml-2 text-blue-500 normal-case">· {selectedServicio.nombre}</span>}
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
             <div>
               <Label htmlFor="nombre">Nombre completo *</Label>
-              <Input
-                id="nombre"
-                placeholder="Ej: María García"
-                value={formData.nombre}
-                onChange={e => handleFieldChange('nombre', e.target.value)}
-              />
+              <Input id="nombre" placeholder="Ej: María García" value={formData.nombre} onChange={e => handleFieldChange('nombre', e.target.value)} />
             </div>
             <div>
               <Label htmlFor="telefono">WhatsApp *</Label>
-              <Input
-                id="telefono"
-                type="tel"
-                placeholder="Ej: 1123456789"
-                value={formData.telefono}
-                onChange={e => handleFieldChange('telefono', e.target.value)}
-              />
+              <Input id="telefono" type="tel" placeholder="Ej: 1123456789" value={formData.telefono} onChange={e => handleFieldChange('telefono', e.target.value)} />
             </div>
             <div>
               <Label htmlFor="email">Email (opcional)</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="tu@email.com"
-                value={formData.email}
-                onChange={e => handleFieldChange('email', e.target.value)}
-              />
+              <Input id="email" type="email" placeholder="tu@email.com" value={formData.email} onChange={e => handleFieldChange('email', e.target.value)} />
             </div>
             {profesional.obras_sociales?.length > 0 && (
               <div>
                 <Label htmlFor="obra_social">Obra social</Label>
-                <Select
-                  id="obra_social"
-                  value={formData.obra_social}
-                  onChange={e => handleFieldChange('obra_social', e.target.value)}
-                >
+                <Select id="obra_social" value={formData.obra_social} onChange={e => handleFieldChange('obra_social', e.target.value)}>
                   <option value="">Sin obra social / Particular</option>
                   {profesional.obras_sociales.map(os => (
                     <option key={os} value={os}>{os}</option>
@@ -275,12 +360,7 @@ export function BookingWizard({ profesional }) {
             )}
             <div>
               <Label htmlFor="motivo">Motivo de consulta (opcional)</Label>
-              <Textarea
-                id="motivo"
-                placeholder="Describí brevemente tu consulta..."
-                value={formData.motivo}
-                onChange={e => handleFieldChange('motivo', e.target.value)}
-              />
+              <Textarea id="motivo" placeholder="Describí brevemente tu consulta..." value={formData.motivo} onChange={e => handleFieldChange('motivo', e.target.value)} />
             </div>
           </div>
 
@@ -295,7 +375,7 @@ export function BookingWizard({ profesional }) {
         </div>
       )}
 
-      {/* Step 3: Confirm */}
+      {/* ── PASO 3: Confirmar ── */}
       {step === 3 && (
         <div className="space-y-4">
           <div className="flex items-center gap-3 mb-2">
@@ -310,6 +390,12 @@ export function BookingWizard({ profesional }) {
           <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 overflow-hidden">
             <SummaryRow label="Profesional" value={profesional.nombre} />
             <SummaryRow label="Especialidad" value={profesional.especialidad} />
+            {selectedServicio && (
+              <SummaryRow
+                label="Servicio"
+                value={`${selectedServicio.nombre} (${selectedServicio.duracion_minutos} min)`}
+              />
+            )}
             <SummaryRow label="Fecha" value={<span className="capitalize">{fechaFormateada}</span>} />
             <SummaryRow label="Hora" value={selectedTime} />
             <SummaryRow label="Paciente" value={formData.nombre} />

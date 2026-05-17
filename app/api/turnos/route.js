@@ -14,6 +14,7 @@ export async function POST(request) {
       profesional_whatsapp,
       profesional_calendar_id,
       duracion_turno_minutos,
+      servicio_nombre,
       paciente_nombre,
       paciente_telefono,
       paciente_email,
@@ -41,7 +42,7 @@ export async function POST(request) {
 
     // Create Google Calendar event and save event_id
     if (profesional_calendar_id) {
-      const titulo = `Turno: ${paciente_nombre}`;
+      const titulo = `Turno - ${paciente_nombre}${servicio_nombre ? ` - ${servicio_nombre}` : ''}`;
       const descripcion = [
         `Paciente: ${paciente_nombre}`,
         `Tel: ${paciente_telefono}`,
