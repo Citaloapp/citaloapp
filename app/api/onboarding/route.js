@@ -21,6 +21,7 @@ export async function POST(request) {
     const obras_sociales = formData.get('obras_sociales') || '';
     const duracion_turno = formData.get('duracion_turno') || '30';
     const color_marca = formData.get('color_marca') || '#0ea5e9';
+    const servicios = formData.get('servicios') || '[]';
     const foto = formData.get('foto');
 
     if (!nombre || !especialidad || !telefono || !email) {
@@ -42,7 +43,7 @@ export async function POST(request) {
 
     const solicitud = await crearSolicitud({
       nombre, especialidad, matricula, telefono, email,
-      descripcion, obras_sociales, duracion_turno, color_marca, foto_url,
+      descripcion, obras_sociales, duracion_turno, color_marca, foto_url, servicios,
     });
 
     if (process.env.N8N_WEBHOOK_URL) {

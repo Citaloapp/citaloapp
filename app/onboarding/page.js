@@ -5,8 +5,11 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 const DURACIONES = ['20', '30', '45', '60'];
+const DURACIONES_SERVICIO = ['20', '30', '45', '60', '90'];
 
 const STEPS = ['Tus datos', 'Tu perfil', 'Confirmar'];
+
+const SERVICIO_VACIO = { nombre: '', duracion: '30', precio: '' };
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(0);
@@ -28,11 +31,24 @@ export default function OnboardingPage() {
   const [obrasSociales, setObrasSociales] = useState('');
   const [duracion, setDuracion] = useState('30');
   const [colorMarca, setColorMarca] = useState('#0ea5e9');
+  const [servicios, setServicios] = useState([{ ...SERVICIO_VACIO }]);
 
   const fileInputRef = useRef(null);
 
   const step0Valid = nombre.trim() && especialidad.trim() && telefono.trim() && email.trim();
-  const step1Valid = true;
+  const step1Valid = servicios.some(s => s.nombre.trim());
+
+  function addServicio() {
+    setServicios(prev => [...prev, { ...SERVICIO_VACIO }]);
+  }
+
+  function removeServicio(i) {
+    setServicios(prev => prev.filter((_, idx) => idx !== i));
+  }
+
+  function updateServicio(i, field, value) {
+    setServicios(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: value } : s));
+  }
 
   function handleFotoChange(e) {
     const file = e.target.files?.[0];
@@ -55,6 +71,7 @@ export default function OnboardingPage() {
       fd.append('obras_sociales', obrasSociales);
       fd.append('duracion_turno', duracion);
       fd.append('color_marca', colorMarca);
+      fd.append('servicios', JSON.stringify(servicios.filter(s => s.nombre.trim())));
       if (fotoFile) fd.append('foto', fotoFile);
 
       const res = await fetch('/api/onboarding', { method: 'POST', body: fd });
@@ -273,8 +290,90 @@ export default function OnboardingPage() {
               </div>
             </div>
 
+            {/* Servicios */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Tus servicios *</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Agregá los servicios que ofrecés</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addServicio}
+                  className="flex items-center gap-1.5 text-sm text-[#0ea5e9] font-medium hover:text-[#0284c7] transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Agregar
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {servicios.map((s, i) => (
+                  <div key={i} className="border border-gray-200 rounded-xl p-3 space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]"
+                        placeholder="Ej: Consulta, Peeling, Dermapen"
+                        value={s.nombre}
+                        onChange={e => updateServicio(i, 'nombre', e.target.value)}
+                      />
+                      {servicios.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeServicio(i)}
+                          className="text-gray-300 hover:text-red-400 transition-colors shrink-0"
+                          aria-label="Eliminar servicio"
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-500 mb-1">Duración</p>
+                        <div className="flex gap-1 flex-wrap">
+                          {DURACIONES_SERVICIO.map(d => (
+                            <button
+                              key={d}
+                              type="button"
+                              onClick={() => updateServicio(i, 'duracion', d)}
+                              className={cn(
+                                'px-2.5 py-1 rounded-lg text-xs font-medium border transition-all',
+                                s.duracion === d
+                                  ? 'bg-[#0ea5e9] text-white border-transparent'
+                                  : 'border-gray-200 text-gray-600 hover:border-[#0ea5e9] bg-white'
+                              )}
+                            >
+                              {d}m
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="w-28 shrink-0">
+                        <p className="text-xs text-gray-500 mb-1">Precio (opcional)</p>
+                        <input
+                          type="number"
+                          className="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]"
+                          placeholder="$ 0"
+                          value={s.precio}
+                          onChange={e => updateServicio(i, 'precio', e.target.value)}
+                          min="0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <button
-              className="w-full h-12 rounded-2xl font-semibold text-white text-base bg-[#0ea5e9] hover:bg-[#0284c7] transition-colors"
+              className="w-full h-12 rounded-2xl font-semibold text-white text-base bg-[#0ea5e9] hover:bg-[#0284c7] transition-colors disabled:opacity-40"
+              disabled={!step1Valid}
               onClick={() => setStep(2)}
             >
               Ver resumen
@@ -319,6 +418,21 @@ export default function OnboardingPage() {
                   <span className="text-sm font-medium text-gray-900">{colorMarca}</span>
                 </div>
               </div>
+              {servicios.filter(s => s.nombre.trim()).length > 0 && (
+                <div className="px-5 py-3">
+                  <p className="text-sm text-gray-500 mb-2">Servicios</p>
+                  <div className="space-y-1">
+                    {servicios.filter(s => s.nombre.trim()).map((s, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm">
+                        <span className="font-medium text-gray-900">{s.nombre}</span>
+                        <span className="text-gray-400 text-xs">
+                          {s.duracion} min{s.precio ? ` · $${Number(s.precio).toLocaleString('es-AR')}` : ''}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="bg-sky-50 rounded-2xl px-5 py-4 text-sm text-sky-700 border border-sky-100">
