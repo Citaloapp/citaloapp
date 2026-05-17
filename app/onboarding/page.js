@@ -524,7 +524,7 @@ function SearchSelect({ label, placeholder, options, value, onChange }) {
   }
 
   return (
-    <div>
+    <div className="relative z-10">
       <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
       <div className="relative">
         <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -594,7 +594,7 @@ function MultiSearchSelect({ label, placeholder, options, selected, onChange }) 
   }
 
   return (
-    <div>
+    <div className="relative z-10">
       <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
 
       {selected.length > 0 && (
