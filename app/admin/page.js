@@ -14,11 +14,27 @@ import { Badge } from '@/components/ui/badge';
 
 const SESSION_KEY = 'citalo_admin_pw';
 
+const DIAS_SEMANA = [
+  { value: 'lunes', label: 'Lunes' },
+  { value: 'martes', label: 'Martes' },
+  { value: 'miercoles', label: 'Miércoles' },
+  { value: 'jueves', label: 'Jueves' },
+  { value: 'viernes', label: 'Viernes' },
+  { value: 'sabado', label: 'Sábado' },
+  { value: 'domingo', label: 'Domingo' },
+];
+
+const HORAS_ATENCION = Array.from({ length: 33 }, (_, i) => {
+  const mins = 360 + i * 30;
+  return `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+});
+
 const EMPTY_PRO = {
   slug: '', nombre: '', especialidad: '', matricula: '',
   foto_url: '', descripcion: '', telefono_whatsapp: '',
   calendar_id: '', color_marca: '#2563eb',
   obras_sociales: '', duracion_turno_minutos: '30',
+  dias_atencion: '', horario_inicio: '09:00', horario_fin: '18:00',
 };
 
 const EMPTY_SERV = {
@@ -182,6 +198,9 @@ export default function AdminPage() {
         ? pro.obras_sociales.join(', ')
         : pro.obras_sociales,
       duracion_turno_minutos: String(pro.duracion_turno_minutos),
+      dias_atencion: pro.dias_atencion || '',
+      horario_inicio: pro.horario_inicio || '09:00',
+      horario_fin: pro.horario_fin || '18:00',
     });
     setEditPhotoFile(null);
     setEditPhotoPreview('');
@@ -571,6 +590,39 @@ export default function AdminPage() {
                       </Select>
                     </FormField>
                     <div className="sm:col-span-2">
+                      <Label>Días de atención</Label>
+                      <div className="flex flex-wrap gap-3 mt-1.5">
+                        {DIAS_SEMANA.map(({ value, label }) => {
+                          const lista = (editingPro.dias_atencion || '').split(',').map(d => d.trim()).filter(Boolean);
+                          const checked = lista.includes(value);
+                          return (
+                            <label key={value} className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => {
+                                  const next = checked ? lista.filter(d => d !== value) : [...lista, value];
+                                  setEditingPro(p => ({ ...p, dias_atencion: next.join(',') }));
+                                }}
+                                className="rounded"
+                              />
+                              {label}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <FormField label="Horario de inicio">
+                      <Select value={editingPro.horario_inicio} onChange={e => setEditingPro(p => ({ ...p, horario_inicio: e.target.value }))}>
+                        {HORAS_ATENCION.map(h => <option key={h} value={h}>{h}</option>)}
+                      </Select>
+                    </FormField>
+                    <FormField label="Horario de fin">
+                      <Select value={editingPro.horario_fin} onChange={e => setEditingPro(p => ({ ...p, horario_fin: e.target.value }))}>
+                        {HORAS_ATENCION.map(h => <option key={h} value={h}>{h}</option>)}
+                      </Select>
+                    </FormField>
+                    <div className="sm:col-span-2">
                       <FormField label="Descripción / Bio"><Textarea value={editingPro.descripcion} onChange={e => setEditingPro(p => ({ ...p, descripcion: e.target.value }))} /></FormField>
                     </div>
                     <div className="sm:col-span-2 flex gap-3 justify-end pt-2">
@@ -614,6 +666,39 @@ export default function AdminPage() {
                       </Select>
                     </FormField>
                     <FormField label="Obras sociales (separadas por coma)"><Input placeholder="OSDE, Swiss Medical, PAMI" value={newPro.obras_sociales} onChange={e => setNewPro(p => ({ ...p, obras_sociales: e.target.value }))} /></FormField>
+                    <div className="sm:col-span-2">
+                      <Label>Días de atención</Label>
+                      <div className="flex flex-wrap gap-3 mt-1.5">
+                        {DIAS_SEMANA.map(({ value, label }) => {
+                          const lista = (newPro.dias_atencion || '').split(',').map(d => d.trim()).filter(Boolean);
+                          const checked = lista.includes(value);
+                          return (
+                            <label key={value} className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => {
+                                  const next = checked ? lista.filter(d => d !== value) : [...lista, value];
+                                  setNewPro(p => ({ ...p, dias_atencion: next.join(',') }));
+                                }}
+                                className="rounded"
+                              />
+                              {label}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <FormField label="Horario de inicio">
+                      <Select value={newPro.horario_inicio} onChange={e => setNewPro(p => ({ ...p, horario_inicio: e.target.value }))}>
+                        {HORAS_ATENCION.map(h => <option key={h} value={h}>{h}</option>)}
+                      </Select>
+                    </FormField>
+                    <FormField label="Horario de fin">
+                      <Select value={newPro.horario_fin} onChange={e => setNewPro(p => ({ ...p, horario_fin: e.target.value }))}>
+                        {HORAS_ATENCION.map(h => <option key={h} value={h}>{h}</option>)}
+                      </Select>
+                    </FormField>
                     <div className="sm:col-span-2">
                       <FormField label="Descripción / Bio"><Textarea placeholder="Breve descripción del profesional..." value={newPro.descripcion} onChange={e => setNewPro(p => ({ ...p, descripcion: e.target.value }))} /></FormField>
                     </div>

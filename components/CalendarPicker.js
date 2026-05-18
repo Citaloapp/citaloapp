@@ -19,8 +19,12 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const DIA_JS = { lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5, sabado: 6, domingo: 0 };
 
-export function CalendarPicker({ onDateSelect, selectedDate }) {
+export function CalendarPicker({ onDateSelect, selectedDate, diasAtencion }) {
+  const diasPermitidos = diasAtencion
+    ? diasAtencion.split(',').map(d => d.trim().toLowerCase()).filter(Boolean).map(d => DIA_JS[d]).filter(n => n !== undefined)
+    : null;
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const monthStart = startOfMonth(currentMonth);
@@ -74,10 +78,12 @@ export function CalendarPicker({ onDateSelect, selectedDate }) {
         {days.map((d, i) => {
           const inMonth = isSameMonth(d, currentMonth);
           const isPast = isBefore(startOfDay(d), today);
-          const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+          const isDiaNoPermitido = diasPermitidos !== null
+            ? !diasPermitidos.includes(d.getDay())
+            : (d.getDay() === 0 || d.getDay() === 6);
           const isSelected = selectedDate && isSameDay(d, selectedDate);
           const isTodayDay = isToday(d);
-          const disabled = !inMonth || isPast || isWeekend;
+          const disabled = !inMonth || isPast || isDiaNoPermitido;
 
           return (
             <button

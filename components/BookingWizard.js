@@ -63,9 +63,16 @@ export function BookingWizard({ profesional }) {
     setLoadingSlots(true);
     try {
       const fecha = format(date, 'yyyy-MM-dd');
-      const res = await fetch(
-        `/api/slots?calendarId=${encodeURIComponent(profesional.calendar_id)}&fecha=${fecha}&duracion=${duracion}&slug=${profesional.slug}`
-      );
+      const params = new URLSearchParams({
+        calendarId: profesional.calendar_id,
+        fecha,
+        duracion: String(duracion),
+        slug: profesional.slug,
+      });
+      if (profesional.horario_inicio) params.set('horario_inicio', profesional.horario_inicio);
+      if (profesional.horario_fin) params.set('horario_fin', profesional.horario_fin);
+      if (profesional.dias_atencion) params.set('dias_atencion', profesional.dias_atencion);
+      const res = await fetch(`/api/slots?${params.toString()}`);
       const data = await res.json();
       setAvailableSlots(data.slots || []);
     } catch {
@@ -259,7 +266,7 @@ export function BookingWizard({ profesional }) {
             </div>
           )}
 
-          <CalendarPicker onDateSelect={handleDateSelect} selectedDate={selectedDate} />
+          <CalendarPicker onDateSelect={handleDateSelect} selectedDate={selectedDate} diasAtencion={profesional.dias_atencion} />
 
           {selectedDate && (
             <div className="bg-white rounded-2xl border border-gray-200 p-4">

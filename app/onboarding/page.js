@@ -6,6 +6,21 @@ import { cn } from '@/lib/utils';
 
 const DURACIONES = ['20', '30', '45', '60'];
 const DURACIONES_SERVICIO = ['20', '30', '45', '60', '90'];
+
+const DIAS_SEMANA = [
+  { value: 'lunes', label: 'Lun' },
+  { value: 'martes', label: 'Mar' },
+  { value: 'miercoles', label: 'Mié' },
+  { value: 'jueves', label: 'Jue' },
+  { value: 'viernes', label: 'Vie' },
+  { value: 'sabado', label: 'Sáb' },
+  { value: 'domingo', label: 'Dom' },
+];
+
+const HORAS_ATENCION = Array.from({ length: 33 }, (_, i) => {
+  const mins = 360 + i * 30;
+  return `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+});
 const STEPS = ['Tus datos', 'Tu perfil', 'Elegí tu plan', 'Confirmar'];
 
 const PLANES = [
@@ -84,6 +99,9 @@ export default function OnboardingPage() {
 
   // Paso 2
   const [fotoFile, setFotoFile] = useState(null);
+  const [diasAtencion, setDiasAtencion] = useState([]);
+  const [horarioInicio, setHorarioInicio] = useState('09:00');
+  const [horarioFin, setHorarioFin] = useState('18:00');
   const [fotoPreview, setFotoPreview] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [obrasSocialesSeleccionadas, setObrasSocialesSeleccionadas] = useState([]);
@@ -129,6 +147,9 @@ export default function OnboardingPage() {
       fd.append('obras_sociales', obrasSocialesSeleccionadas.join(', '));
       fd.append('duracion_turno', duracion);
       fd.append('color_marca', colorMarca);
+      fd.append('dias_atencion', diasAtencion.join(','));
+      fd.append('horario_inicio', horarioInicio);
+      fd.append('horario_fin', horarioFin);
       fd.append('servicios', JSON.stringify(servicios.filter(s => s.nombre.trim())));
       if (fotoFile) fd.append('foto', fotoFile);
 
@@ -346,6 +367,63 @@ export default function OnboardingPage() {
                     className="w-12 h-10 rounded-xl border border-gray-200 cursor-pointer p-0.5"
                   />
                   <span className="text-sm text-gray-500">Es el color principal que ven tus pacientes</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Horarios */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Horarios de atención</p>
+                <p className="text-xs text-gray-400 mt-0.5">Días y horario en que atendés</p>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-500 mb-2">Días que atendés</p>
+                <div className="flex flex-wrap gap-2">
+                  {DIAS_SEMANA.map(({ value, label }) => {
+                    const checked = diasAtencion.includes(value);
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setDiasAtencion(prev =>
+                          prev.includes(value) ? prev.filter(d => d !== value) : [...prev, value]
+                        )}
+                        className={cn(
+                          'px-3 py-1.5 rounded-xl text-xs font-medium border transition-all',
+                          checked
+                            ? 'bg-[#0ea5e9] text-white border-transparent'
+                            : 'border-gray-200 text-gray-600 hover:border-[#0ea5e9] bg-white'
+                        )}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Desde</label>
+                  <select
+                    value={horarioInicio}
+                    onChange={e => setHorarioInicio(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]"
+                  >
+                    {HORAS_ATENCION.map(h => <option key={h} value={h}>{h}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Hasta</label>
+                  <select
+                    value={horarioFin}
+                    onChange={e => setHorarioFin(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]"
+                  >
+                    {HORAS_ATENCION.map(h => <option key={h} value={h}>{h}</option>)}
+                  </select>
                 </div>
               </div>
             </div>
