@@ -6,7 +6,34 @@ import { cn } from '@/lib/utils';
 
 const DURACIONES = ['20', '30', '45', '60'];
 const DURACIONES_SERVICIO = ['20', '30', '45', '60', '90'];
-const STEPS = ['Tus datos', 'Tu perfil', 'Confirmar'];
+const STEPS = ['Tus datos', 'Tu perfil', 'Elegí tu plan', 'Confirmar'];
+
+const PLANES = [
+  {
+    name: 'Básico',
+    price: '$10.000',
+    desc: 'Para empezar',
+    features: ['1 profesional', 'Hasta 60 turnos/mes', 'Link personalizado', 'Notificaciones WhatsApp'],
+    popular: false,
+    url: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=7136e2b1b0e04641878d59fee648fbed',
+  },
+  {
+    name: 'Pro',
+    price: '$20.000',
+    desc: 'El más elegido',
+    features: ['Hasta 3 profesionales', 'Turnos ilimitados', 'Recordatorios automáticos', 'Soporte prioritario'],
+    popular: true,
+    url: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=c9cd522d9d304c0cbc2d4e47481d4aae',
+  },
+  {
+    name: 'Negocio',
+    price: '$45.000',
+    desc: 'Para clínicas y consultorios',
+    features: ['Profesionales ilimitados', 'Multi-sucursal', 'Panel de estadísticas', 'Personalización de marca'],
+    popular: false,
+    url: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=00f7cf03d1ac4bbebf9f46e934702055',
+  },
+];
 const SERVICIO_VACIO = { nombre: '', duracion: '30', precio: '' };
 
 const ESPECIALIDADES = [
@@ -408,16 +435,93 @@ export default function OnboardingPage() {
               disabled={!step1Valid}
               onClick={() => setStep(2)}
             >
-              Ver resumen
+              Siguiente
             </button>
           </div>
         )}
 
-        {/* ── PASO 2: Confirmar ── */}
+        {/* ── PASO 2: Elegí tu plan ── */}
         {step === 2 && (
           <div className="space-y-5">
             <div className="flex items-center gap-3">
               <button onClick={() => setStep(1)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <div>
+                <h1 className="text-2xl font-extrabold text-gray-900">Elegí tu plan</h1>
+                <p className="text-gray-500 text-sm">Sin sorpresas. Podés cambiar cuando quieras.</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4">
+              {PLANES.map(({ name, price, desc, features, popular, url }) => (
+                <div
+                  key={name}
+                  className={`rounded-2xl p-5 flex flex-col gap-4 ${
+                    popular
+                      ? 'bg-[#0ea5e9] text-white shadow-xl shadow-sky-200'
+                      : 'bg-white border border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      {popular && (
+                        <span className="inline-block bg-white/20 text-white text-xs font-bold px-2.5 py-0.5 rounded-full mb-1.5">
+                          Más popular
+                        </span>
+                      )}
+                      <p className={`text-xs font-medium mb-0.5 ${popular ? 'text-sky-100' : 'text-gray-500'}`}>{desc}</p>
+                      <p className={`text-sm font-semibold ${popular ? 'text-white' : 'text-gray-900'}`}>{name}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className={`text-2xl font-extrabold ${popular ? 'text-white' : 'text-gray-900'}`}>{price}</span>
+                      <p className={`text-xs ${popular ? 'text-sky-100' : 'text-gray-400'}`}>/mes</p>
+                    </div>
+                  </div>
+
+                  <ul className="space-y-1.5">
+                    {features.map((f) => (
+                      <li key={f} className="flex items-center gap-2">
+                        <svg className={`w-4 h-4 shrink-0 ${popular ? 'text-white' : 'text-[#0ea5e9]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className={`text-sm ${popular ? 'text-sky-50' : 'text-gray-600'}`}>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`block text-center py-3 rounded-xl font-semibold text-sm transition-colors ${
+                      popular
+                        ? 'bg-white text-[#0ea5e9] hover:bg-sky-50'
+                        : 'bg-[#0ea5e9] text-white hover:bg-[#0284c7]'
+                    }`}
+                  >
+                    Suscribirme
+                  </a>
+                </div>
+              ))}
+            </div>
+
+            <button
+              className="w-full h-12 rounded-2xl font-semibold text-white text-base bg-[#0ea5e9] hover:bg-[#0284c7] transition-colors"
+              onClick={() => setStep(3)}
+            >
+              Continuar al resumen
+            </button>
+          </div>
+        )}
+
+        {/* ── PASO 3: Confirmar ── */}
+        {step === 3 && (
+          <div className="space-y-5">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setStep(2)} className="text-gray-400 hover:text-gray-600">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
