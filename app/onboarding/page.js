@@ -567,7 +567,7 @@ function SearchSelect({ label, placeholder, options, value, onChange }) {
         )}
         {open && query && filtered.length === 0 && (
           <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg px-4 py-3 text-sm text-gray-400">
-            Sin resultados para "{query}"
+            Sin resultados para &quot;{query}&quot;
           </div>
         )}
       </div>
@@ -642,7 +642,7 @@ function MultiSearchSelect({ label, placeholder, options, selected, onChange }) 
                 {option}
               </li>
             )) : (
-              <li className="px-4 py-3 text-sm text-gray-400">Sin resultados para "{query}"</li>
+              <li className="px-4 py-3 text-sm text-gray-400">Sin resultados para &quot;{query}&quot;</li>
             )}
           </ul>
         )}
