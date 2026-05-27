@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
@@ -21,35 +21,38 @@ const HORAS_ATENCION = Array.from({ length: 33 }, (_, i) => {
   const mins = 360 + i * 30;
   return `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
 });
-const STEPS = ['Tus datos', 'Tu perfil', 'Elegí tu plan', 'Confirmar'];
+
+const STEPS = ['Tus datos', 'Tu perfil', 'Elegí tu plan', 'Confirmar y pagar'];
 
 const PLANES = [
   {
     name: 'Básico',
     price: '$10.000',
+    priceNum: 10000,
     desc: 'Para empezar',
     features: ['1 profesional', 'Hasta 60 turnos/mes', 'Link personalizado', 'Notificaciones WhatsApp'],
     popular: false,
-    url: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=7136e2b1b0e04641878d59fee648fbed',
   },
   {
     name: 'Pro',
     price: '$20.000',
+    priceNum: 20000,
     desc: 'El más elegido',
     features: ['Hasta 3 profesionales', 'Turnos ilimitados', 'Recordatorios automáticos', 'Soporte prioritario'],
     popular: true,
-    url: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=c9cd522d9d304c0cbc2d4e47481d4aae',
   },
   {
     name: 'Negocio',
     price: '$45.000',
+    priceNum: 45000,
     desc: 'Para clínicas y consultorios',
     features: ['Profesionales ilimitados', 'Multi-sucursal', 'Panel de estadísticas', 'Personalización de marca'],
     popular: false,
-    url: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=00f7cf03d1ac4bbebf9f46e934702055',
   },
 ];
+
 const SERVICIO_VACIO = { nombre: '', duracion: '30', precio: '' };
+const SESSION_KEY = 'citalo_onboarding';
 
 const ESPECIALIDADES = [
   'Alergología', 'Anatomía patológica', 'Anestesiología', 'Cardiología',
@@ -86,42 +89,83 @@ const OBRAS_SOCIALES = [
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [paying, setPaying] = useState(false);
   const [error, setError] = useState('');
 
-  // Paso 1
+  // Paso 0 — datos personales
   const [nombre, setNombre] = useState('');
   const [especialidad, setEspecialidad] = useState('');
   const [matricula, setMatricula] = useState('');
   const [telefono, setTelefono] = useState('');
   const [email, setEmail] = useState('');
+  const [slugDeseado, setSlugDeseado] = useState('');
 
-  // Paso 2
+  // Paso 1 — perfil
   const [fotoFile, setFotoFile] = useState(null);
+  const [fotoPreview, setFotoPreview] = useState('');
   const [diasAtencion, setDiasAtencion] = useState([]);
   const [horarioInicio, setHorarioInicio] = useState('09:00');
   const [horarioFin, setHorarioFin] = useState('18:00');
-  const [fotoPreview, setFotoPreview] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [obrasSocialesSeleccionadas, setObrasSocialesSeleccionadas] = useState([]);
   const [duracion, setDuracion] = useState('30');
   const [colorMarca, setColorMarca] = useState('#0ea5e9');
   const [servicios, setServicios] = useState([{ ...SERVICIO_VACIO }]);
 
+  // Paso 2 — plan
+  const [planSeleccionado, setPlanSeleccionado] = useState(null);
+
   const fileInputRef = useRef(null);
+
+  // Restaurar desde sessionStorage al montar
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(SESSION_KEY);
+      if (!saved) return;
+      const d = JSON.parse(saved);
+      if (d.nombre) setNombre(d.nombre);
+      if (d.especialidad) setEspecialidad(d.especialidad);
+      if (d.matricula) setMatricula(d.matricula);
+      if (d.telefono) setTelefono(d.telefono);
+      if (d.email) setEmail(d.email);
+      if (d.slugDeseado) setSlugDeseado(d.slugDeseado);
+      if (d.diasAtencion) setDiasAtencion(d.diasAtencion);
+      if (d.horarioInicio) setHorarioInicio(d.horarioInicio);
+      if (d.horarioFin) setHorarioFin(d.horarioFin);
+      if (d.descripcion) setDescripcion(d.descripcion);
+      if (d.obrasSociales) setObrasSocialesSeleccionadas(d.obrasSociales);
+      if (d.duracion) setDuracion(d.duracion);
+      if (d.colorMarca) setColorMarca(d.colorMarca);
+      if (d.servicios) setServicios(d.servicios);
+      if (d.planSeleccionado) setPlanSeleccionado(d.planSeleccionado);
+    } catch {}
+  }, []);
+
+  // Guardar en sessionStorage cuando cambian los datos
+  function saveSession(overrides = {}) {
+    try {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+        nombre, especialidad, matricula, telefono, email, slugDeseado,
+        diasAtencion, horarioInicio, horarioFin, descripcion,
+        obrasSociales: obrasSocialesSeleccionadas, duracion, colorMarca,
+        servicios, planSeleccionado,
+        ...overrides,
+      }));
+    } catch {}
+  }
+
+  function goToStep(n, overrides = {}) {
+    saveSession(overrides);
+    setStep(n);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   const step0Valid = nombre.trim() && especialidad.trim() && telefono.trim() && email.trim();
   const step1Valid = servicios.some(s => s.nombre.trim());
+  const step2Valid = !!planSeleccionado;
 
-  function addServicio() {
-    setServicios(prev => [...prev, { ...SERVICIO_VACIO }]);
-  }
-
-  function removeServicio(i) {
-    setServicios(prev => prev.filter((_, idx) => idx !== i));
-  }
-
+  function addServicio() { setServicios(prev => [...prev, { ...SERVICIO_VACIO }]); }
+  function removeServicio(i) { setServicios(prev => prev.filter((_, idx) => idx !== i)); }
   function updateServicio(i, field, value) {
     setServicios(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: value } : s));
   }
@@ -133,8 +177,8 @@ export default function OnboardingPage() {
     setFotoPreview(URL.createObjectURL(file));
   }
 
-  async function handleSubmit() {
-    setSubmitting(true);
+  async function handlePagar() {
+    setPaying(true);
     setError('');
     try {
       const fd = new FormData();
@@ -143,6 +187,7 @@ export default function OnboardingPage() {
       fd.append('matricula', matricula);
       fd.append('telefono', telefono);
       fd.append('email', email);
+      fd.append('slug_deseado', slugDeseado);
       fd.append('descripcion', descripcion);
       fd.append('obras_sociales', obrasSocialesSeleccionadas.join(', '));
       fd.append('duracion_turno', duracion);
@@ -151,45 +196,25 @@ export default function OnboardingPage() {
       fd.append('horario_inicio', horarioInicio);
       fd.append('horario_fin', horarioFin);
       fd.append('servicios', JSON.stringify(servicios.filter(s => s.nombre.trim())));
+      fd.append('plan_elegido', planSeleccionado.name);
       if (fotoFile) fd.append('foto', fotoFile);
 
-      const res = await fetch('/api/onboarding', { method: 'POST', body: fd });
+      const res = await fetch('/api/mp/crear-preferencia', { method: 'POST', body: fd });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Error al enviar');
+        throw new Error(data.error || 'Error al iniciar el pago');
       }
-      setSubmitted(true);
+      const { init_point } = await res.json();
+      sessionStorage.removeItem(SESSION_KEY);
+      window.location.href = init_point;
     } catch (err) {
       setError(err.message);
-    } finally {
-      setSubmitting(false);
+      setPaying(false);
     }
-  }
-
-  if (submitted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-white flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center py-16">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-extrabold text-gray-900 mb-3">¡Solicitud enviada!</h1>
-          <p className="text-gray-500 leading-relaxed">
-            Revisaremos tu información y en 72hs te enviamos tu link personalizado por WhatsApp.
-          </p>
-          <a href="/" className="inline-block mt-8 text-sm text-[#0ea5e9] font-semibold hover:underline">
-            Volver al inicio
-          </a>
-        </div>
-      </div>
-    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-white">
-      {/* Header */}
       <header className="bg-white/90 backdrop-blur-sm border-b border-gray-100 px-4 py-4 flex justify-center">
         <a href="/">
           <Image src="/logo.svg" alt="Citalo" width={100} height={26} priority />
@@ -251,23 +276,40 @@ export default function OnboardingPage() {
               <Field label="Número de matrícula" placeholder="Ej: 12345" value={matricula} onChange={setMatricula} />
               <Field label="WhatsApp *" type="tel" placeholder="Ej: 1123456789 (sin 0 ni 15)" value={telefono} onChange={setTelefono} />
               <Field label="Email *" type="email" placeholder="tu@email.com" value={email} onChange={setEmail} />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Slug deseado para tu link
+                  <span className="text-gray-400 font-normal ml-1">(opcional)</span>
+                </label>
+                <div className="flex items-center border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#0ea5e9]">
+                  <span className="pl-3 pr-1 text-sm text-gray-400 shrink-0">citaloapp.com.ar/</span>
+                  <input
+                    type="text"
+                    className="flex-1 py-2.5 pr-3 text-sm focus:outline-none bg-transparent"
+                    placeholder="dra-garcia"
+                    value={slugDeseado}
+                    onChange={e => setSlugDeseado(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Solo letras minúsculas, números y guiones.</p>
+              </div>
             </div>
 
             <button
               className="w-full h-12 rounded-2xl font-semibold text-white text-base transition-colors disabled:opacity-40 bg-[#0ea5e9] hover:bg-[#0284c7]"
               disabled={!step0Valid}
-              onClick={() => setStep(1)}
+              onClick={() => goToStep(1)}
             >
               Siguiente
             </button>
           </div>
         )}
 
-        {/* ── PASO 1: Configuración ── */}
+        {/* ── PASO 1: Configuración del perfil ── */}
         {step === 1 && (
           <div className="space-y-5">
             <div className="flex items-center gap-3">
-              <button onClick={() => setStep(0)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => goToStep(0)} className="text-gray-400 hover:text-gray-600">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
@@ -296,11 +338,7 @@ export default function OnboardingPage() {
                     )}
                   </div>
                   <div>
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="text-sm text-[#0ea5e9] font-medium hover:underline"
-                    >
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="text-sm text-[#0ea5e9] font-medium hover:underline">
                       {fotoPreview ? 'Cambiar foto' : 'Subir foto'}
                     </button>
                     <p className="text-xs text-gray-400 mt-0.5">JPG o PNG, máx. 5MB</p>
@@ -339,15 +377,9 @@ export default function OnboardingPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Duración de cada turno</label>
                 <div className="grid grid-cols-4 gap-2">
                   {DURACIONES.map(d => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => setDuracion(d)}
-                      className={cn(
-                        'py-2.5 rounded-xl text-sm font-medium border transition-all',
-                        duracion === d
-                          ? 'bg-[#0ea5e9] text-white border-transparent'
-                          : 'border-gray-200 text-gray-700 hover:border-[#0ea5e9] hover:text-[#0ea5e9] bg-white'
+                    <button key={d} type="button" onClick={() => setDuracion(d)}
+                      className={cn('py-2.5 rounded-xl text-sm font-medium border transition-all',
+                        duracion === d ? 'bg-[#0ea5e9] text-white border-transparent' : 'border-gray-200 text-gray-700 hover:border-[#0ea5e9] hover:text-[#0ea5e9] bg-white'
                       )}
                     >
                       {d} min
@@ -360,10 +392,7 @@ export default function OnboardingPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Color de tu perfil</label>
                 <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    value={colorMarca}
-                    onChange={e => setColorMarca(e.target.value)}
+                  <input type="color" value={colorMarca} onChange={e => setColorMarca(e.target.value)}
                     className="w-12 h-10 rounded-xl border border-gray-200 cursor-pointer p-0.5"
                   />
                   <span className="text-sm text-gray-500">Es el color principal que ven tus pacientes</span>
@@ -377,24 +406,16 @@ export default function OnboardingPage() {
                 <p className="text-sm font-medium text-gray-700">Horarios de atención</p>
                 <p className="text-xs text-gray-400 mt-0.5">Días y horario en que atendés</p>
               </div>
-
               <div>
                 <p className="text-xs text-gray-500 mb-2">Días que atendés</p>
                 <div className="flex flex-wrap gap-2">
                   {DIAS_SEMANA.map(({ value, label }) => {
                     const checked = diasAtencion.includes(value);
                     return (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => setDiasAtencion(prev =>
-                          prev.includes(value) ? prev.filter(d => d !== value) : [...prev, value]
-                        )}
-                        className={cn(
-                          'px-3 py-1.5 rounded-xl text-xs font-medium border transition-all',
-                          checked
-                            ? 'bg-[#0ea5e9] text-white border-transparent'
-                            : 'border-gray-200 text-gray-600 hover:border-[#0ea5e9] bg-white'
+                      <button key={value} type="button"
+                        onClick={() => setDiasAtencion(prev => prev.includes(value) ? prev.filter(d => d !== value) : [...prev, value])}
+                        className={cn('px-3 py-1.5 rounded-xl text-xs font-medium border transition-all',
+                          checked ? 'bg-[#0ea5e9] text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-[#0ea5e9] bg-white'
                         )}
                       >
                         {label}
@@ -403,13 +424,10 @@ export default function OnboardingPage() {
                   })}
                 </div>
               </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Desde</label>
-                  <select
-                    value={horarioInicio}
-                    onChange={e => setHorarioInicio(e.target.value)}
+                  <select value={horarioInicio} onChange={e => setHorarioInicio(e.target.value)}
                     className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]"
                   >
                     {HORAS_ATENCION.map(h => <option key={h} value={h}>{h}</option>)}
@@ -417,9 +435,7 @@ export default function OnboardingPage() {
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Hasta</label>
-                  <select
-                    value={horarioFin}
-                    onChange={e => setHorarioFin(e.target.value)}
+                  <select value={horarioFin} onChange={e => setHorarioFin(e.target.value)}
                     className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]"
                   >
                     {HORAS_ATENCION.map(h => <option key={h} value={h}>{h}</option>)}
@@ -435,9 +451,7 @@ export default function OnboardingPage() {
                   <p className="text-sm font-medium text-gray-700">Tus servicios *</p>
                   <p className="text-xs text-gray-400 mt-0.5">Agregá los servicios que ofrecés</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={addServicio}
+                <button type="button" onClick={addServicio}
                   className="flex items-center gap-1.5 text-sm text-[#0ea5e9] font-medium hover:text-[#0284c7] transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -446,7 +460,6 @@ export default function OnboardingPage() {
                   Agregar
                 </button>
               </div>
-
               <div className="space-y-3">
                 {servicios.map((s, i) => (
                   <div key={i} className="border border-gray-200 rounded-xl p-3 space-y-2.5">
@@ -459,11 +472,7 @@ export default function OnboardingPage() {
                         onChange={e => updateServicio(i, 'nombre', e.target.value)}
                       />
                       {servicios.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeServicio(i)}
-                          className="text-gray-300 hover:text-red-400 transition-colors shrink-0"
-                        >
+                        <button type="button" onClick={() => removeServicio(i)} className="text-gray-300 hover:text-red-400 transition-colors shrink-0">
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
@@ -475,15 +484,9 @@ export default function OnboardingPage() {
                         <p className="text-xs text-gray-500 mb-1">Duración</p>
                         <div className="flex gap-1 flex-wrap">
                           {DURACIONES_SERVICIO.map(d => (
-                            <button
-                              key={d}
-                              type="button"
-                              onClick={() => updateServicio(i, 'duracion', d)}
-                              className={cn(
-                                'px-2.5 py-1 rounded-lg text-xs font-medium border transition-all',
-                                s.duracion === d
-                                  ? 'bg-[#0ea5e9] text-white border-transparent'
-                                  : 'border-gray-200 text-gray-600 hover:border-[#0ea5e9] bg-white'
+                            <button key={d} type="button" onClick={() => updateServicio(i, 'duracion', d)}
+                              className={cn('px-2.5 py-1 rounded-lg text-xs font-medium border transition-all',
+                                s.duracion === d ? 'bg-[#0ea5e9] text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-[#0ea5e9] bg-white'
                               )}
                             >
                               {d}m
@@ -511,7 +514,7 @@ export default function OnboardingPage() {
             <button
               className="w-full h-12 rounded-2xl font-semibold text-white text-base bg-[#0ea5e9] hover:bg-[#0284c7] transition-colors disabled:opacity-40"
               disabled={!step1Valid}
-              onClick={() => setStep(2)}
+              onClick={() => goToStep(2)}
             >
               Siguiente
             </button>
@@ -522,91 +525,95 @@ export default function OnboardingPage() {
         {step === 2 && (
           <div className="space-y-5">
             <div className="flex items-center gap-3">
-              <button onClick={() => setStep(1)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => goToStep(1)} className="text-gray-400 hover:text-gray-600">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
               <div>
                 <h1 className="text-2xl font-extrabold text-gray-900">Elegí tu plan</h1>
-                <p className="text-gray-500 text-sm">Sin sorpresas. Podés cambiar cuando quieras.</p>
+                <p className="text-gray-500 text-sm">El pago se realiza en el siguiente paso.</p>
               </div>
             </div>
 
             <div className="grid gap-4">
-              {PLANES.map(({ name, price, desc, features, popular, url }) => (
-                <div
-                  key={name}
-                  className={`rounded-2xl p-5 flex flex-col gap-4 ${
-                    popular
-                      ? 'bg-[#0ea5e9] text-white shadow-xl shadow-sky-200'
-                      : 'bg-white border border-gray-200'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      {popular && (
-                        <span className="inline-block bg-white/20 text-white text-xs font-bold px-2.5 py-0.5 rounded-full mb-1.5">
-                          Más popular
-                        </span>
-                      )}
-                      <p className={`text-xs font-medium mb-0.5 ${popular ? 'text-sky-100' : 'text-gray-500'}`}>{desc}</p>
-                      <p className={`text-sm font-semibold ${popular ? 'text-white' : 'text-gray-900'}`}>{name}</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <span className={`text-2xl font-extrabold ${popular ? 'text-white' : 'text-gray-900'}`}>{price}</span>
-                      <p className={`text-xs ${popular ? 'text-sky-100' : 'text-gray-400'}`}>/mes</p>
-                    </div>
-                  </div>
-
-                  <ul className="space-y-1.5">
-                    {features.map((f) => (
-                      <li key={f} className="flex items-center gap-2">
-                        <svg className={`w-4 h-4 shrink-0 ${popular ? 'text-white' : 'text-[#0ea5e9]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className={`text-sm ${popular ? 'text-sky-50' : 'text-gray-600'}`}>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`block text-center py-3 rounded-xl font-semibold text-sm transition-colors ${
-                      popular
-                        ? 'bg-white text-[#0ea5e9] hover:bg-sky-50'
-                        : 'bg-[#0ea5e9] text-white hover:bg-[#0284c7]'
-                    }`}
+              {PLANES.map((plan) => {
+                const isSelected = planSeleccionado?.name === plan.name;
+                return (
+                  <button
+                    key={plan.name}
+                    type="button"
+                    onClick={() => setPlanSeleccionado(plan)}
+                    className={cn(
+                      'w-full text-left rounded-2xl p-5 flex flex-col gap-4 transition-all',
+                      plan.popular && !isSelected && 'bg-[#0ea5e9] text-white shadow-xl shadow-sky-200',
+                      plan.popular && isSelected && 'bg-[#0ea5e9] text-white shadow-xl shadow-sky-200 ring-4 ring-sky-300',
+                      !plan.popular && !isSelected && 'bg-white border border-gray-200',
+                      !plan.popular && isSelected && 'bg-white border-2 border-[#0ea5e9] shadow-sm',
+                    )}
                   >
-                    Suscribirme
-                  </a>
-                </div>
-              ))}
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        {plan.popular && (
+                          <span className="inline-block bg-white/20 text-white text-xs font-bold px-2.5 py-0.5 rounded-full mb-1.5">
+                            Más popular
+                          </span>
+                        )}
+                        <p className={cn('text-xs font-medium mb-0.5', plan.popular ? 'text-sky-100' : 'text-gray-500')}>{plan.desc}</p>
+                        <p className={cn('text-sm font-semibold', plan.popular ? 'text-white' : 'text-gray-900')}>{plan.name}</p>
+                      </div>
+                      <div className="text-right shrink-0 flex items-start gap-2">
+                        <div>
+                          <span className={cn('text-2xl font-extrabold', plan.popular ? 'text-white' : 'text-gray-900')}>{plan.price}</span>
+                          <p className={cn('text-xs', plan.popular ? 'text-sky-100' : 'text-gray-400')}>/mes</p>
+                        </div>
+                        {isSelected && (
+                          <div className={cn('w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-1', plan.popular ? 'bg-white/30' : 'bg-[#0ea5e9]')}>
+                            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <ul className="space-y-1.5">
+                      {plan.features.map((f) => (
+                        <li key={f} className="flex items-center gap-2">
+                          <svg className={cn('w-4 h-4 shrink-0', plan.popular ? 'text-white' : 'text-[#0ea5e9]')} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          <span className={cn('text-sm', plan.popular ? 'text-sky-50' : 'text-gray-600')}>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </button>
+                );
+              })}
             </div>
 
             <button
-              className="w-full h-12 rounded-2xl font-semibold text-white text-base bg-[#0ea5e9] hover:bg-[#0284c7] transition-colors"
-              onClick={() => setStep(3)}
+              className="w-full h-12 rounded-2xl font-semibold text-white text-base bg-[#0ea5e9] hover:bg-[#0284c7] transition-colors disabled:opacity-40"
+              disabled={!step2Valid}
+              onClick={() => goToStep(3, { planSeleccionado })}
             >
-              Continuar al resumen
+              Ver resumen y pagar
             </button>
           </div>
         )}
 
-        {/* ── PASO 3: Confirmar ── */}
+        {/* ── PASO 3: Resumen + pago ── */}
         {step === 3 && (
           <div className="space-y-5">
             <div className="flex items-center gap-3">
-              <button onClick={() => setStep(2)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => goToStep(2)} className="text-gray-400 hover:text-gray-600">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
               <div>
                 <h1 className="text-2xl font-extrabold text-gray-900">Revisá tu solicitud</h1>
-                <p className="text-gray-500 text-sm">Confirmá que todo esté bien.</p>
+                <p className="text-gray-500 text-sm">Confirmá que todo esté bien antes de pagar.</p>
               </div>
             </div>
 
@@ -622,6 +629,9 @@ export default function OnboardingPage() {
               {matricula && <SummaryRow label="Matrícula" value={matricula} />}
               <SummaryRow label="WhatsApp" value={telefono} />
               <SummaryRow label="Email" value={email} />
+              {slugDeseado && (
+                <SummaryRow label="Link deseado" value={`citaloapp.com.ar/${slugDeseado}`} />
+              )}
               {descripcion && <SummaryRow label="Descripción" value={descripcion} />}
               {obrasSocialesSeleccionadas.length > 0 && (
                 <div className="px-5 py-3">
@@ -660,9 +670,19 @@ export default function OnboardingPage() {
               )}
             </div>
 
-            <div className="bg-sky-50 rounded-2xl px-5 py-4 text-sm text-sky-700 border border-sky-100">
-              Revisaremos tu información y en <strong>72hs</strong> te enviamos tu link personalizado por WhatsApp.
-            </div>
+            {/* Plan seleccionado */}
+            {planSeleccionado && (
+              <div className="bg-[#0ea5e9] rounded-2xl px-5 py-4 flex items-center justify-between text-white">
+                <div>
+                  <p className="text-xs text-sky-100">Plan seleccionado</p>
+                  <p className="font-bold text-lg">{planSeleccionado.name}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-extrabold">{planSeleccionado.price}</p>
+                  <p className="text-xs text-sky-100">/mes</p>
+                </div>
+              </div>
+            )}
 
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
@@ -672,16 +692,27 @@ export default function OnboardingPage() {
 
             <button
               className="w-full h-12 rounded-2xl font-semibold text-white text-base bg-[#0ea5e9] hover:bg-[#0284c7] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
-              disabled={submitting}
-              onClick={handleSubmit}
+              disabled={paying}
+              onClick={handlePagar}
             >
-              {submitting ? (
+              {paying ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Enviando...
+                  Redirigiendo a MercadoPago...
                 </>
-              ) : 'Enviar solicitud'}
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                  Confirmar y pagar con MercadoPago
+                </>
+              )}
             </button>
+
+            <p className="text-center text-xs text-gray-400">
+              Serás redirigido al checkout seguro de MercadoPago para completar el pago.
+            </p>
           </div>
         )}
       </div>
@@ -695,15 +726,9 @@ function SearchSelect({ label, placeholder, options, value, onChange }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
 
-  const filtered = options
-    .filter(o => o.toLowerCase().includes(query.toLowerCase()))
-    .slice(0, 12);
+  const filtered = options.filter(o => o.toLowerCase().includes(query.toLowerCase())).slice(0, 12);
 
-  function handleSelect(option) {
-    onChange(option);
-    setQuery('');
-    setOpen(false);
-  }
+  function handleSelect(option) { onChange(option); setQuery(''); setOpen(false); }
 
   return (
     <div className="relative z-10">
@@ -724,9 +749,7 @@ function SearchSelect({ label, placeholder, options, value, onChange }) {
           onChange={e => setQuery(e.target.value)}
         />
         {value && !open && (
-          <button
-            type="button"
-            onPointerDown={e => { e.preventDefault(); onChange(''); setQuery(''); }}
+          <button type="button" onPointerDown={e => { e.preventDefault(); onChange(''); setQuery(''); }}
             className="absolute inset-y-0 right-3 flex items-center text-gray-300 hover:text-gray-500"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -737,9 +760,7 @@ function SearchSelect({ label, placeholder, options, value, onChange }) {
         {open && filtered.length > 0 && (
           <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
             {filtered.map(option => (
-              <li
-                key={option}
-                onPointerDown={e => { e.preventDefault(); handleSelect(option); }}
+              <li key={option} onPointerDown={e => { e.preventDefault(); handleSelect(option); }}
                 className="px-4 py-2.5 text-sm text-gray-700 hover:bg-sky-50 hover:text-[#0ea5e9] cursor-pointer transition-colors first:rounded-t-xl last:rounded-b-xl"
               >
                 {option}
@@ -763,32 +784,22 @@ function MultiSearchSelect({ label, placeholder, options, selected, onChange }) 
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
 
-  const filtered = options
-    .filter(o => !selected.includes(o) && o.toLowerCase().includes(query.toLowerCase()))
-    .slice(0, 12);
+  const filtered = options.filter(o => !selected.includes(o) && o.toLowerCase().includes(query.toLowerCase())).slice(0, 12);
 
   function toggle(option) {
-    onChange(selected.includes(option)
-      ? selected.filter(s => s !== option)
-      : [...selected, option]
-    );
+    onChange(selected.includes(option) ? selected.filter(s => s !== option) : [...selected, option]);
     setQuery('');
   }
 
   return (
     <div className="relative z-10">
       <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
-
       {selected.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-2">
           {selected.map(os => (
             <span key={os} className="inline-flex items-center gap-1 bg-sky-50 text-sky-700 text-xs font-medium pl-2.5 pr-1.5 py-1 rounded-full border border-sky-100">
               {os}
-              <button
-                type="button"
-                onPointerDown={e => { e.preventDefault(); onChange(selected.filter(s => s !== os)); }}
-                className="text-sky-400 hover:text-sky-700 transition-colors"
-              >
+              <button type="button" onPointerDown={e => { e.preventDefault(); onChange(selected.filter(s => s !== os)); }} className="text-sky-400 hover:text-sky-700 transition-colors">
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -797,7 +808,6 @@ function MultiSearchSelect({ label, placeholder, options, selected, onChange }) 
           ))}
         </div>
       )}
-
       <div className="relative">
         <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
           <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -816,9 +826,7 @@ function MultiSearchSelect({ label, placeholder, options, selected, onChange }) 
         {open && (filtered.length > 0 || query) && (
           <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
             {filtered.length > 0 ? filtered.map(option => (
-              <li
-                key={option}
-                onPointerDown={e => { e.preventDefault(); toggle(option); }}
+              <li key={option} onPointerDown={e => { e.preventDefault(); toggle(option); }}
                 className="px-4 py-2.5 text-sm text-gray-700 hover:bg-sky-50 hover:text-[#0ea5e9] cursor-pointer transition-colors first:rounded-t-xl last:rounded-b-xl"
               >
                 {option}

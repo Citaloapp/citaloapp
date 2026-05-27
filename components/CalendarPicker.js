@@ -78,9 +78,9 @@ export function CalendarPicker({ onDateSelect, selectedDate, diasAtencion }) {
         {days.map((d, i) => {
           const inMonth = isSameMonth(d, currentMonth);
           const isPast = isBefore(startOfDay(d), today);
-          const isDiaNoPermitido = diasPermitidos !== null
-            ? !diasPermitidos.includes(d.getDay())
-            : (d.getDay() === 0 || d.getDay() === 6);
+          const dayOfWeek = d.getDay();
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+          const isDiaNoPermitido = isWeekend || (diasPermitidos !== null && !diasPermitidos.includes(dayOfWeek));
           const isSelected = selectedDate && isSameDay(d, selectedDate);
           const isTodayDay = isToday(d);
           const disabled = !inMonth || isPast || isDiaNoPermitido;
@@ -94,7 +94,7 @@ export function CalendarPicker({ onDateSelect, selectedDate, diasAtencion }) {
                 'text-center text-sm py-2 rounded-xl transition-all font-medium',
                 !inMonth && 'invisible',
                 inMonth && !disabled && !isSelected && 'hover:bg-blue-50 text-gray-700 cursor-pointer',
-                disabled && inMonth && 'text-gray-300 cursor-not-allowed',
+                disabled && inMonth && 'opacity-40 cursor-not-allowed text-gray-500',
                 isTodayDay && !isSelected && 'ring-1 ring-blue-300 text-blue-600',
                 isSelected && 'bg-blue-600 text-white shadow-sm hover:bg-blue-700'
               )}

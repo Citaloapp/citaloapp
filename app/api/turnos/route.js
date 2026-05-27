@@ -106,18 +106,17 @@ export async function POST(request) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tipo: 'confirmacion',
+          evento: 'turno_confirmado',
           profesional_slug,
           profesional_nombre,
-          profesional_whatsapp,
           paciente_nombre,
           paciente_telefono,
           paciente_email,
-          obra_social,
-          motivo,
           fecha,
           hora,
-          cancelar_url,
+          obra_social,
+          motivo,
+          turno_id: turno.id,
         }),
       }).catch(err => console.error('[turnos/POST] n8n webhook falló:', err?.message || err));
     }

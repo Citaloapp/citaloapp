@@ -26,6 +26,7 @@ export function BookingWizard({ profesional }) {
   const [selectedTime, setSelectedTime] = useState(null);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [slotsError, setSlotsError] = useState(false);
   const [formData, setFormData] = useState({
     nombre: '', telefono: '', email: '', obra_social: '', motivo: '',
   });
@@ -60,6 +61,7 @@ export function BookingWizard({ profesional }) {
     setSelectedDate(date);
     setSelectedTime(null);
     setAvailableSlots([]);
+    setSlotsError(false);
     setLoadingSlots(true);
     try {
       const fecha = format(date, 'yyyy-MM-dd');
@@ -73,9 +75,11 @@ export function BookingWizard({ profesional }) {
       if (profesional.horario_fin) params.set('horario_fin', profesional.horario_fin);
       if (profesional.dias_atencion) params.set('dias_atencion', profesional.dias_atencion);
       const res = await fetch(`/api/slots?${params.toString()}`);
+      if (!res.ok) throw new Error('error');
       const data = await res.json();
       setAvailableSlots(data.slots || []);
     } catch {
+      setSlotsError(true);
       setAvailableSlots([]);
     } finally {
       setLoadingSlots(false);
@@ -275,6 +279,16 @@ export function BookingWizard({ profesional }) {
                 <div className="flex justify-center py-6">
                   <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                 </div>
+              ) : slotsError ? (
+                <div className="text-center py-4 space-y-2">
+                  <p className="text-sm text-red-600">No se pudo cargar la disponibilidad, intentá de nuevo.</p>
+                  <button
+                    onClick={() => handleDateSelect(selectedDate)}
+                    className="text-xs text-blue-600 underline"
+                  >
+                    Reintentar
+                  </button>
+                </div>
               ) : availableSlots.length === 0 ? (
                 <p className="text-sm text-gray-500 text-center py-4">No hay turnos disponibles para este día.</p>
               ) : (
@@ -290,7 +304,7 @@ export function BookingWizard({ profesional }) {
                         className={cn(
                           'py-2 px-3 rounded-xl text-sm font-medium border transition-all',
                           isOcupado
-                            ? 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                            ? 'opacity-40 cursor-not-allowed bg-gray-100 border-gray-200 text-gray-500'
                             : isSelected
                             ? 'text-white border-transparent shadow-sm'
                             : 'border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600 bg-white'
@@ -298,12 +312,7 @@ export function BookingWizard({ profesional }) {
                         style={!isOcupado && isSelected ? { backgroundColor: accentColor, borderColor: accentColor } : {}}
                       >
                         {isOcupado ? (
-                          <span className="flex items-center justify-center gap-1">
-                            <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                            <span className="line-through">{slot.hora}</span>
-                          </span>
+                          <span className="line-through">{slot.hora}</span>
                         ) : slot.hora}
                       </button>
                     );

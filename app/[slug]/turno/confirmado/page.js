@@ -98,7 +98,7 @@ export default function ConfirmadoPage({ params, searchParams }) {
         </div>
 
         <p className="text-xs text-gray-400">
-          Recibirás una confirmación por WhatsApp.
+          Recibirás un mensaje de WhatsApp con el recordatorio.
         </p>
       </div>
       </div>
