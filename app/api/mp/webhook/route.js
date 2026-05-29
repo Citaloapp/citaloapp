@@ -42,6 +42,8 @@ async function procesarPagoAprobado(paymentId) {
     color_marca: solicitud.color_marca,
     obras_sociales: solicitud.obras_sociales,
     duracion_turno_minutos: solicitud.duracion_turno,
+    email: solicitud.email,
+    subscription_id: payment.preapproval_id || '',
   });
 
   await actualizarEstadoSolicitud(solicitudId, 'activo');

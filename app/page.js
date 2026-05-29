@@ -472,6 +472,11 @@ export default function Home() {
           </div>
           <div className="border-t border-gray-800 pt-6 text-center text-sm text-gray-600">
             © 2026 Citalo. Todos los derechos reservados.
+            <div className="mt-2">
+              <a href="/cancelar-suscripcion" className="text-gray-500 hover:text-gray-400 transition-colors">
+                ¿Querés cancelar tu suscripción? Hacé click acá
+              </a>
+            </div>
           </div>
         </div>
       </footer>
