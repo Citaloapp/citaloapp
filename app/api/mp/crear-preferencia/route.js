@@ -11,9 +11,8 @@ cloudinary.config({
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://citaloapp.com.ar';
 
 const PRECIOS_PLANES = {
-  'Básico': 10000,
-  'Pro': 20000,
-  'Negocio': 45000,
+  'Plan Profesional': 17999,
+  'Plan Consultorio': 39999,
 };
 
 export async function POST(request) {

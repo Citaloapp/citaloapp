@@ -26,28 +26,48 @@ const STEPS = ['Tus datos', 'Tu perfil', 'Elegí tu plan', 'Confirmar y pagar'];
 
 const PLANES = [
   {
-    name: 'Básico',
-    price: '$10.000',
-    priceNum: 10000,
-    desc: 'Para empezar',
-    features: ['1 profesional', 'Hasta 60 turnos/mes', 'Link personalizado', 'Notificaciones WhatsApp'],
+    name: 'Plan Profesional',
+    price: '$17.999',
+    priceNum: 17999,
+    desc: 'Para profesionales independientes',
+    features: [
+      '1 profesional',
+      'Turnos ilimitados',
+      'Mensaje de bienvenida con link de turnos',
+      'Recordatorio automático 24hs antes del turno',
+      'Cancelación y reprogramación por WhatsApp',
+    ],
     popular: false,
+    enterprise: false,
   },
   {
-    name: 'Pro',
-    price: '$20.000',
-    priceNum: 20000,
-    desc: 'El más elegido',
-    features: ['Hasta 3 profesionales', 'Turnos ilimitados', 'Recordatorios automáticos', 'Soporte prioritario'],
+    name: 'Plan Consultorio',
+    price: '$39.999',
+    priceNum: 39999,
+    desc: 'Para consultorios compartidos',
+    features: [
+      'Hasta 3 profesionales',
+      'Turnos ilimitados',
+      'Mensaje de bienvenida con link de turnos',
+      'Recordatorio automático 24hs antes del turno',
+      'Cancelación y reprogramación por WhatsApp',
+      'Panel admin compartido',
+    ],
     popular: true,
+    enterprise: false,
   },
   {
-    name: 'Negocio',
-    price: '$45.000',
-    priceNum: 45000,
-    desc: 'Para clínicas y consultorios',
-    features: ['Profesionales ilimitados', 'Multi-sucursal', 'Panel de estadísticas', 'Personalización de marca'],
+    name: 'Plan Enterprise',
+    price: 'Consultar',
+    priceNum: null,
+    desc: 'Para grandes equipos',
+    features: [
+      'Más de 3 profesionales',
+      'Todo lo del Plan Consultorio',
+      'Atención personalizada',
+    ],
     popular: false,
+    enterprise: true,
   },
 ];
 
@@ -565,7 +585,7 @@ export default function OnboardingPage() {
                       <div className="text-right shrink-0 flex items-start gap-2">
                         <div>
                           <span className={cn('text-2xl font-extrabold', plan.popular ? 'text-white' : 'text-gray-900')}>{plan.price}</span>
-                          <p className={cn('text-xs', plan.popular ? 'text-sky-100' : 'text-gray-400')}>/mes</p>
+                          {!plan.enterprise && <p className={cn('text-xs', plan.popular ? 'text-sky-100' : 'text-gray-400')}>/mes</p>}
                         </div>
                         {isSelected && (
                           <div className={cn('w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-1', plan.popular ? 'bg-white/30' : 'bg-[#0ea5e9]')}>
@@ -595,9 +615,19 @@ export default function OnboardingPage() {
             <button
               className="w-full h-12 rounded-2xl font-semibold text-white text-base bg-[#0ea5e9] hover:bg-[#0284c7] transition-colors disabled:opacity-40"
               disabled={!step2Valid}
-              onClick={() => goToStep(3, { planSeleccionado })}
+              onClick={() => {
+                if (planSeleccionado?.enterprise) {
+                  const num = process.env.NEXT_PUBLIC_CONTACT_WHATSAPP || '';
+                  window.open(
+                    `https://wa.me/${num}?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20el%20Plan%20Enterprise%20de%20Citaloapp`,
+                    '_blank'
+                  );
+                } else {
+                  goToStep(3, { planSeleccionado });
+                }
+              }}
             >
-              Ver resumen y pagar
+              {planSeleccionado?.enterprise ? 'Consultar por WhatsApp' : 'Ver resumen y pagar'}
             </button>
           </div>
         )}

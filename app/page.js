@@ -319,33 +319,47 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8 items-stretch">
             {[
               {
-                name: 'Básico',
-                price: '$10.000',
-                desc: 'Para empezar',
-                features: ['1 profesional', 'Hasta 60 turnos/mes', 'Link personalizado', 'Notificaciones WhatsApp'],
+                name: 'Plan Profesional',
+                price: '$17.999',
+                desc: 'Para profesionales independientes',
+                features: [
+                  '1 profesional',
+                  'Turnos ilimitados',
+                  'Mensaje de bienvenida con link de turnos',
+                  'Recordatorio automático 24hs antes del turno',
+                  'Cancelación y reprogramación por WhatsApp',
+                ],
                 popular: false,
                 delay: 0,
-                url: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=7136e2b1b0e04641878d59fee648fbed',
+                enterprise: false,
               },
               {
-                name: 'Pro',
-                price: '$20.000',
-                desc: 'El más elegido',
-                features: ['Hasta 3 profesionales', 'Turnos ilimitados', 'Recordatorios automáticos', 'Soporte prioritario'],
+                name: 'Plan Consultorio',
+                price: '$39.999',
+                desc: 'Para consultorios compartidos',
+                features: [
+                  'Hasta 3 profesionales',
+                  'Todo lo del Plan Profesional',
+                  'Panel admin compartido',
+                ],
                 popular: true,
                 delay: 150,
-                url: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=c9cd522d9d304c0cbc2d4e47481d4aae',
+                enterprise: false,
               },
               {
-                name: 'Negocio',
-                price: '$45.000',
-                desc: 'Para clínicas y consultorios',
-                features: ['Profesionales ilimitados', 'Multi-sucursal', 'Panel de estadísticas', 'Personalización de marca'],
+                name: 'Plan Enterprise',
+                price: 'Consultar precio',
+                desc: 'Para grandes equipos',
+                features: [
+                  'Más de 3 profesionales',
+                  'Todo lo del Plan Consultorio',
+                  'Atención personalizada',
+                ],
                 popular: false,
                 delay: 300,
-                url: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=00f7cf03d1ac4bbebf9f46e934702055',
+                enterprise: true,
               },
-            ].map(({ name, price, desc, features, popular, delay, url }) => (
+            ].map(({ name, price, desc, features, popular, delay, enterprise }) => (
               <FadeIn key={name} delay={delay} className="flex">
                 <div className={`flex-1 rounded-3xl p-8 flex flex-col ${popular ? 'bg-[#0ea5e9] text-white shadow-2xl shadow-sky-300 md:scale-105' : 'bg-white border border-gray-200'}`}>
                   {popular && (
@@ -354,8 +368,8 @@ export default function Home() {
                     </div>
                   )}
                   <p className={`text-sm font-medium mb-1 ${popular ? 'text-sky-100' : 'text-gray-500'}`}>{desc}</p>
-                  <div className={`text-4xl font-extrabold mb-1 ${popular ? 'text-white' : 'text-gray-900'}`}>{price}</div>
-                  <p className={`text-sm mb-8 ${popular ? 'text-sky-100' : 'text-gray-400'}`}>/mes</p>
+                  <div className={`font-extrabold mb-1 ${enterprise ? 'text-2xl' : 'text-4xl'} ${popular ? 'text-white' : 'text-gray-900'}`}>{price}</div>
+                  <p className={`text-sm mb-8 ${popular ? 'text-sky-100' : 'text-gray-400'}`}>{enterprise ? 'Venta personalizada' : '/mes'}</p>
                   <ul className="space-y-3 flex-1 mb-8">
                     {features.map((f) => (
                       <li key={f} className="flex items-start gap-2.5">
@@ -366,18 +380,27 @@ export default function Home() {
                       </li>
                     ))}
                   </ul>
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`block text-center py-3.5 rounded-2xl font-semibold text-sm transition-colors ${
-                      popular
-                        ? 'bg-white text-[#0ea5e9] hover:bg-sky-50'
-                        : 'bg-[#0ea5e9] text-white hover:bg-[#0284c7]'
-                    }`}
-                  >
-                    Suscribirme
-                  </a>
+                  {enterprise ? (
+                    <a
+                      href={`https://wa.me/${process.env.NEXT_PUBLIC_CONTACT_WHATSAPP || ''}?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20el%20Plan%20Enterprise%20de%20Citaloapp`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-center py-3.5 rounded-2xl font-semibold text-sm transition-colors bg-[#0ea5e9] text-white hover:bg-[#0284c7]"
+                    >
+                      Consultar por WhatsApp
+                    </a>
+                  ) : (
+                    <a
+                      href="/onboarding"
+                      className={`block text-center py-3.5 rounded-2xl font-semibold text-sm transition-colors ${
+                        popular
+                          ? 'bg-white text-[#0ea5e9] hover:bg-sky-50'
+                          : 'bg-[#0ea5e9] text-white hover:bg-[#0284c7]'
+                      }`}
+                    >
+                      Comenzar
+                    </a>
+                  )}
                 </div>
               </FadeIn>
             ))}
