@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getSolicitudById, actualizarEstadoSolicitud, crearProfesionalActivo } from '@/lib/sheets';
+import { getSolicitudById, actualizarEstadoSolicitud, crearProfesionalActivo, guardarPaymentIdSolicitud } from '@/lib/sheets';
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://citaloapp.com.ar';
 
 async function procesarPagoAprobado(paymentId) {
   const paymentRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
@@ -20,6 +22,10 @@ async function procesarPagoAprobado(paymentId) {
     return;
   }
 
+  // Evitar duplicados: mismo payment_id ya procesado
+  if (solicitud.payment_id === String(paymentId)) return;
+
+  // Evitar duplicados: solicitud ya activa por otro pago
   if (solicitud.estado === 'activo') return;
 
   const slug = solicitud.slug_deseado || `prof-${Date.now()}`;
@@ -39,6 +45,7 @@ async function procesarPagoAprobado(paymentId) {
   });
 
   await actualizarEstadoSolicitud(solicitudId, 'activo');
+  await guardarPaymentIdSolicitud(solicitudId, String(paymentId));
 
   if (process.env.N8N_WEBHOOK_URL) {
     fetch(process.env.N8N_WEBHOOK_URL, {
@@ -46,15 +53,13 @@ async function procesarPagoAprobado(paymentId) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         evento: 'profesional_registrado',
-        slug,
-        nombre: solicitud.nombre,
-        especialidad: solicitud.especialidad,
-        telefono: solicitud.telefono,
-        email: solicitud.email,
-        plan_elegido: solicitud.plan_elegido,
-        link: `https://citaloapp.com.ar/${slug}`,
-        solicitud_id: solicitudId,
-        payment_id: paymentId,
+        profesional_nombre: solicitud.nombre,
+        profesional_email: solicitud.email,
+        profesional_telefono: solicitud.telefono,
+        profesional_slug: slug,
+        link_turnos: `${BASE_URL}/${slug}`,
+        plan: solicitud.plan_elegido,
+        fecha_registro: new Date().toISOString(),
       }),
     }).catch(err => console.error('[mp/webhook] n8n webhook falló:', err?.message));
   }
