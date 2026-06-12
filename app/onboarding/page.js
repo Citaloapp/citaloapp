@@ -75,7 +75,6 @@ const SERVICIO_VACIO = { nombre: '', duracion: '30', precio: '' };
 const SESSION_KEY = 'citalo_onboarding';
 
 const ESPECIALIDADES = [
-  // Clínica y medicina general
   'Clínica Médica',
   'Medicina General',
   'Medicina Familiar',
@@ -84,7 +83,6 @@ const ESPECIALIDADES = [
   'Geriatría',
   'Medicina del Trabajo',
   'Medicina del Deporte',
-  // Corazón y circulación
   'Cardiología',
   'Cardiología Pediátrica',
   'Cirugía Cardiovascular',
@@ -92,50 +90,40 @@ const ESPECIALIDADES = [
   'Flebolinfología',
   'Hematología',
   'Hemoterapia',
-  // Aparato digestivo
   'Gastroenterología',
   'Hepatología',
   'Cirugía General',
   'Cirugía Bariátrica',
   'Proctología',
   'Nutrición y Dietética',
-  // Sistema nervioso
   'Neurología',
   'Neurocirugía',
   'Psiquiatría',
   'Psicología',
   'Salud Mental',
-  // Huesos y movimiento
   'Ortopedia y Traumatología',
   'Reumatología',
   'Kinesiología y Fisiatría',
   'Cirugía de Columna',
-  // Respiratorio
   'Neumonología',
   'Otorrinolaringología',
   'Fonoaudiología',
-  // Piel
   'Dermatología',
   'Cirugía Plástica y Reparadora',
-  // Riñones y vías urinarias
   'Nefrología',
   'Urología',
-  // Salud de la mujer
   'Ginecología',
   'Obstetricia',
   'Mastología',
   'Tocoginecología',
-  // Oncología
   'Oncología',
   'Radioterapia',
   'Medicina Nuclear',
-  // Imagen y laboratorio
   'Diagnóstico por Imágenes',
   'Radiología',
   'Ecografía',
   'Laboratorio de Análisis Clínicos',
   'Anatomía Patológica',
-  // Otros
   'Infectología',
   'Endocrinología',
   'Oftalmología',
