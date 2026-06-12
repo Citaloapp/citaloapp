@@ -11,6 +11,7 @@ export async function GET(request) {
   const horarioInicio = searchParams.get('horario_inicio') || '';
   const horarioFin = searchParams.get('horario_fin') || '';
   const diasAtencion = searchParams.get('dias_atencion') || '';
+  const horarios = searchParams.get('horarios') || '';
 
   if (!calendarId || !fecha) {
     return NextResponse.json({ error: 'Parámetros requeridos: calendarId, fecha' }, { status: 400 });
@@ -18,7 +19,7 @@ export async function GET(request) {
 
   try {
     const [slotsCalendar, horasOcupadas] = await Promise.all([
-      getSlotsDisponibles(calendarId, fecha, duracion, { horarioInicio, horarioFin, diasAtencion }),
+      getSlotsDisponibles(calendarId, fecha, duracion, { horarioInicio, horarioFin, diasAtencion, horarios }),
       slug ? getTurnosConfirmadosByFecha(slug, fecha) : Promise.resolve([]),
     ]);
 

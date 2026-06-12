@@ -208,9 +208,9 @@ export default function OnboardingPage() {
   // Paso 1 — perfil
   const [fotoFile, setFotoFile] = useState(null);
   const [fotoPreview, setFotoPreview] = useState('');
-  const [diasAtencion, setDiasAtencion] = useState([]);
-  const [horarioInicio, setHorarioInicio] = useState('09:00');
-  const [horarioFin, setHorarioFin] = useState('18:00');
+  const [horariosPorDia, setHorariosPorDia] = useState(
+    Object.fromEntries(DIAS_SEMANA.map(({ value }) => [value, []]))
+  );
   const [descripcion, setDescripcion] = useState('');
   const [obrasSocialesSeleccionadas, setObrasSocialesSeleccionadas] = useState([]);
   const [duracion, setDuracion] = useState('30');
@@ -234,9 +234,7 @@ export default function OnboardingPage() {
       if (d.telefono) setTelefono(d.telefono);
       if (d.email) setEmail(d.email);
       if (d.slugDeseado) setSlugDeseado(d.slugDeseado);
-      if (d.diasAtencion) setDiasAtencion(d.diasAtencion);
-      if (d.horarioInicio) setHorarioInicio(d.horarioInicio);
-      if (d.horarioFin) setHorarioFin(d.horarioFin);
+      if (d.horariosPorDia) setHorariosPorDia(d.horariosPorDia);
       if (d.descripcion) setDescripcion(d.descripcion);
       if (d.obrasSociales) setObrasSocialesSeleccionadas(d.obrasSociales);
       if (d.duracion) setDuracion(d.duracion);
@@ -251,7 +249,7 @@ export default function OnboardingPage() {
     try {
       sessionStorage.setItem(SESSION_KEY, JSON.stringify({
         nombre, especialidad, matricula, telefono, email, slugDeseado,
-        diasAtencion, horarioInicio, horarioFin, descripcion,
+        horariosPorDia, descripcion,
         obrasSociales: obrasSocialesSeleccionadas, duracion, colorMarca,
         servicios, planSeleccionado,
         ...overrides,
@@ -273,6 +271,41 @@ export default function OnboardingPage() {
   function removeServicio(i) { setServicios(prev => prev.filter((_, idx) => idx !== i)); }
   function updateServicio(i, field, value) {
     setServicios(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: value } : s));
+  }
+
+  function toggleDia(dia) {
+    setHorariosPorDia(prev => ({
+      ...prev,
+      [dia]: prev[dia].length > 0 ? [] : [{ desde: '09:00', hasta: '18:00' }],
+    }));
+  }
+
+  function addRango(dia) {
+    setHorariosPorDia(prev => ({
+      ...prev,
+      [dia]: [...prev[dia], { desde: '09:00', hasta: '18:00' }],
+    }));
+  }
+
+  function removeRango(dia, idx) {
+    setHorariosPorDia(prev => ({
+      ...prev,
+      [dia]: prev[dia].filter((_, i) => i !== idx),
+    }));
+  }
+
+  function updateRango(dia, idx, field, value) {
+    setHorariosPorDia(prev => ({
+      ...prev,
+      [dia]: prev[dia].map((r, i) => i === idx ? { ...r, [field]: value } : r),
+    }));
+  }
+
+  function serializeHorarios(hpd) {
+    return Object.entries(hpd)
+      .filter(([, rangos]) => rangos.length > 0)
+      .map(([dia, rangos]) => `${dia}:${rangos.map(r => `${r.desde}-${r.hasta}`).join(',')}`)
+      .join(';');
   }
 
   function handleFotoChange(e) {
@@ -297,9 +330,7 @@ export default function OnboardingPage() {
       fd.append('obras_sociales', obrasSocialesSeleccionadas.join(', '));
       fd.append('duracion_turno', duracion);
       fd.append('color_marca', colorMarca);
-      fd.append('dias_atencion', diasAtencion.join(','));
-      fd.append('horario_inicio', horarioInicio);
-      fd.append('horario_fin', horarioFin);
+      fd.append('horarios', serializeHorarios(horariosPorDia));
       fd.append('servicios', JSON.stringify(servicios.filter(s => s.nombre.trim())));
       fd.append('plan_elegido', planSeleccionado.name);
       if (fotoFile) fd.append('foto', fotoFile);
@@ -509,43 +540,54 @@ export default function OnboardingPage() {
             <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
               <div>
                 <p className="text-sm font-medium text-gray-700">Horarios de atención</p>
-                <p className="text-xs text-gray-400 mt-0.5">Días y horario en que atendés</p>
+                <p className="text-xs text-gray-400 mt-0.5">Activá cada día y configurá tus rangos horarios</p>
               </div>
-              <div>
-                <p className="text-xs text-gray-500 mb-2">Días que atendés</p>
-                <div className="flex flex-wrap gap-2">
-                  {DIAS_SEMANA.map(({ value, label }) => {
-                    const checked = diasAtencion.includes(value);
-                    return (
-                      <button key={value} type="button"
-                        onClick={() => setDiasAtencion(prev => prev.includes(value) ? prev.filter(d => d !== value) : [...prev, value])}
+              <div className="space-y-3">
+                {DIAS_SEMANA.map(({ value, label }) => {
+                  const rangos = horariosPorDia[value];
+                  const activo = rangos.length > 0;
+                  return (
+                    <div key={value}>
+                      <button type="button"
+                        onClick={() => toggleDia(value)}
                         className={cn('px-3 py-1.5 rounded-xl text-xs font-medium border transition-all',
-                          checked ? 'bg-[#0ea5e9] text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-[#0ea5e9] bg-white'
+                          activo ? 'bg-[#0ea5e9] text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-[#0ea5e9] bg-white'
                         )}
                       >
                         {label}
                       </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Desde</label>
-                  <select value={horarioInicio} onChange={e => setHorarioInicio(e.target.value)}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]"
-                  >
-                    {HORAS_ATENCION.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Hasta</label>
-                  <select value={horarioFin} onChange={e => setHorarioFin(e.target.value)}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]"
-                  >
-                    {HORAS_ATENCION.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                </div>
+                      {activo && (
+                        <div className="mt-2 ml-1 space-y-2">
+                          {rangos.map((rango, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <select value={rango.desde} onChange={e => updateRango(value, idx, 'desde', e.target.value)}
+                                className="border border-gray-300 rounded-xl px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]"
+                              >
+                                {HORAS_ATENCION.map(h => <option key={h} value={h}>{h}</option>)}
+                              </select>
+                              <span className="text-xs text-gray-400">—</span>
+                              <select value={rango.hasta} onChange={e => updateRango(value, idx, 'hasta', e.target.value)}
+                                className="border border-gray-300 rounded-xl px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]"
+                              >
+                                {HORAS_ATENCION.map(h => <option key={h} value={h}>{h}</option>)}
+                              </select>
+                              {rangos.length > 1 && (
+                                <button type="button" onClick={() => removeRango(value, idx)}
+                                  className="text-gray-400 hover:text-red-400 transition-colors text-xl leading-none pb-0.5"
+                                >×</button>
+                              )}
+                            </div>
+                          ))}
+                          <button type="button" onClick={() => addRango(value)}
+                            className="text-xs text-[#0ea5e9] font-medium hover:text-[#0284c7] transition-colors"
+                          >
+                            + Agregar rango
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

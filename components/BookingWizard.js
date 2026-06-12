@@ -71,9 +71,13 @@ export function BookingWizard({ profesional }) {
         duracion: String(duracion),
         slug: profesional.slug,
       });
-      if (profesional.horario_inicio) params.set('horario_inicio', profesional.horario_inicio);
-      if (profesional.horario_fin) params.set('horario_fin', profesional.horario_fin);
-      if (profesional.dias_atencion) params.set('dias_atencion', profesional.dias_atencion);
+      if (profesional.horarios) {
+        params.set('horarios', profesional.horarios);
+      } else {
+        if (profesional.horario_inicio) params.set('horario_inicio', profesional.horario_inicio);
+        if (profesional.horario_fin) params.set('horario_fin', profesional.horario_fin);
+        if (profesional.dias_atencion) params.set('dias_atencion', profesional.dias_atencion);
+      }
       const res = await fetch(`/api/slots?${params.toString()}`);
       if (!res.ok) throw new Error('error');
       const data = await res.json();

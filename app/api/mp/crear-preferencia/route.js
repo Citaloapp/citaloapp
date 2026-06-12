@@ -31,6 +31,7 @@ export async function POST(request) {
     const servicios = formData.get('servicios') || '[]';
     const slug_deseado = formData.get('slug_deseado') || '';
     const plan_elegido = formData.get('plan_elegido') || '';
+    const horarios = formData.get('horarios') || '';
     const foto = formData.get('foto');
 
     if (!nombre || !especialidad || !telefono || !email || !plan_elegido) {
@@ -53,7 +54,7 @@ export async function POST(request) {
     const solicitud = await crearSolicitud({
       nombre, especialidad, matricula, telefono, email,
       descripcion, obras_sociales, duracion_turno, color_marca,
-      foto_url, servicios, slug_deseado, plan_elegido,
+      foto_url, servicios, slug_deseado, plan_elegido, horarios,
       estado: 'pendiente_pago',
     });
 
