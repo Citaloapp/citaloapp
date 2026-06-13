@@ -1,4 +1,4 @@
-import { getProfesionalByEmail } from '@/lib/sheets';
+import { getProfesionalByEmail, getProfesionalesDebug } from '@/lib/sheets';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -8,11 +8,22 @@ export async function GET(request) {
     return Response.json({ error: 'Email requerido' }, { status: 400 });
   }
 
-  const profesional = await getProfesionalByEmail(email.toLowerCase());
+  const emailNormalizado = email.toLowerCase();
+  const debug = await getProfesionalesDebug();
+  const profesional = await getProfesionalByEmail(emailNormalizado);
 
-  if (!profesional) {
-    return Response.json({ error: 'Profesional no encontrado' }, { status: 404 });
-  }
-
-  return Response.json({ calendar_id: profesional.calendar_id });
+  return Response.json({
+    debug: {
+      emailRecibido: email,
+      emailNormalizado,
+      totalFilas: debug.totalRows,
+      headers: debug.headers,
+      primeraFilaDatos: debug.firstDataRow,
+      resultadoGetProfesionalByEmail: profesional,
+    },
+    ...(profesional
+      ? { calendar_id: profesional.calendar_id }
+      : { error: 'Profesional no encontrado' }
+    ),
+  }, { status: profesional ? 200 : 404 });
 }
