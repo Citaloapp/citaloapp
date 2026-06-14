@@ -27,10 +27,7 @@ export async function GET(request) {
     const calendarIdx = headers.indexOf('calendar_id');
 
     if (emailIdx === -1 || calendarIdx === -1) {
-      return Response.json({
-        error: 'Columnas no encontradas',
-        headers
-      }, { status: 500 });
+      return Response.json({ error: 'Columnas no encontradas' }, { status: 500 });
     }
 
     const row = data.find(r => r[emailIdx]?.toLowerCase().trim() === email);
