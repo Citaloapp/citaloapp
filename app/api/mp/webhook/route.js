@@ -13,6 +13,8 @@ async function procesarPagoAprobado(paymentId) {
 
   if (payment.status !== 'approved') return;
 
+  console.log('PRIMER COBRO EXITOSO: ' + paymentId);
+
   const solicitudId = payment.external_reference;
   if (!solicitudId) return;
 
@@ -69,6 +71,20 @@ async function procesarPagoAprobado(paymentId) {
   console.log('[mp/webhook] Profesional creado:', slug);
 }
 
+async function procesarPreapproval(id) {
+  const res = await fetch(`https://api.mercadopago.com/preapproval/${id}`, {
+    headers: { 'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}` },
+  });
+  if (!res.ok) return;
+  const preapproval = await res.json();
+
+  if (preapproval.status === 'authorized') {
+    console.log('NUEVO SUSCRIPTOR: ' + id);
+  } else if (preapproval.status === 'cancelled') {
+    console.log('CANCELÓ SUSCRIPCIÓN: ' + id);
+  }
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -76,6 +92,10 @@ export async function POST(request) {
 
     if (type === 'payment' && data?.id) {
       await procesarPagoAprobado(data.id);
+    }
+
+    if (type === 'preapproval' && data?.id) {
+      await procesarPreapproval(data.id);
     }
 
     return NextResponse.json({ received: true });

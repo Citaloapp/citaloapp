@@ -322,6 +322,8 @@ export default function Home() {
                 name: 'Plan Profesional',
                 price: '$17.999',
                 desc: 'Para profesionales independientes',
+                checkoutUrl: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=a0ae01368917415999d6edf57971b1fa',
+                trialLegend: '14 días gratis · Después $17.999/mes · Sin permanencia',
                 features: [
                   '1 profesional',
                   'Turnos ilimitados',
@@ -337,6 +339,8 @@ export default function Home() {
                 name: 'Plan Consultorio',
                 price: '$39.999',
                 desc: 'Para consultorios compartidos',
+                checkoutUrl: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=2f78e4ba04b947f1ab7a08e5c6556c40',
+                trialLegend: '14 días gratis · Después $39.999/mes · Sin permanencia',
                 features: [
                   'Hasta 3 profesionales',
                   'Todo lo del Plan Profesional',
@@ -359,7 +363,7 @@ export default function Home() {
                 delay: 300,
                 enterprise: true,
               },
-            ].map(({ name, price, desc, features, popular, delay, enterprise }) => (
+            ].map(({ name, price, desc, features, popular, delay, enterprise, checkoutUrl, trialLegend }) => (
               <FadeIn key={name} delay={delay} className="flex">
                 <div className={`flex-1 rounded-3xl p-8 flex flex-col ${popular ? 'bg-[#0ea5e9] text-white shadow-2xl shadow-sky-300 md:scale-105' : 'bg-white border border-gray-200'}`}>
                   {popular && (
@@ -369,7 +373,10 @@ export default function Home() {
                   )}
                   <p className={`text-sm font-medium mb-1 ${popular ? 'text-sky-100' : 'text-gray-500'}`}>{desc}</p>
                   <div className={`font-extrabold mb-1 ${enterprise ? 'text-2xl' : 'text-4xl'} ${popular ? 'text-white' : 'text-gray-900'}`}>{price}</div>
-                  <p className={`text-sm mb-8 ${popular ? 'text-sky-100' : 'text-gray-400'}`}>{enterprise ? 'Venta personalizada' : '/mes'}</p>
+                  <p className={`text-sm ${trialLegend ? '' : 'mb-8'} ${popular ? 'text-sky-100' : 'text-gray-400'}`}>{enterprise ? 'Venta personalizada' : '/mes'}</p>
+                  {trialLegend && (
+                    <p className={`text-xs mb-8 mt-1 ${popular ? 'text-sky-200' : 'text-gray-400'}`}>{trialLegend}</p>
+                  )}
                   <ul className="space-y-3 flex-1 mb-8">
                     {features.map((f) => (
                       <li key={f} className="flex items-start gap-2.5">
@@ -391,14 +398,16 @@ export default function Home() {
                     </a>
                   ) : (
                     <a
-                      href="/onboarding"
+                      href={checkoutUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className={`block text-center py-3.5 rounded-2xl font-semibold text-sm transition-colors ${
                         popular
                           ? 'bg-white text-[#0ea5e9] hover:bg-sky-50'
                           : 'bg-[#0ea5e9] text-white hover:bg-[#0284c7]'
                       }`}
                     >
-                      Comenzar
+                      Empezar gratis 14 días
                     </a>
                   )}
                 </div>
