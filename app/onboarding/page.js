@@ -74,6 +74,11 @@ const PLANES = [
 const SERVICIO_VACIO = { nombre: '', duracion: '30', precio: '' };
 const SESSION_KEY = 'citalo_onboarding';
 
+const CHECKOUT_URLS = {
+  'Plan Profesional': 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=a0ae01368917415999d6edf57971b1fa',
+  'Plan Consultorio': 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=2f78e4ba04b947f1ab7a08e5c6556c40',
+};
+
 const ESPECIALIDADES = [
   'Clínica Médica',
   'Medicina General',
@@ -342,7 +347,8 @@ export default function OnboardingPage() {
       }
       const { init_point } = await res.json();
       sessionStorage.removeItem(SESSION_KEY);
-      window.location.href = init_point;
+      const checkoutUrl = CHECKOUT_URLS[planSeleccionado.name];
+      window.location.href = checkoutUrl || init_point;
     } catch (err) {
       setError(err.message);
       setPaying(false);
