@@ -30,6 +30,7 @@ const PLANES = [
     price: '$17.999',
     priceNum: 17999,
     desc: 'Para profesionales independientes',
+    trialLegend: '14 días gratis · Después $17.999/mes · Sin permanencia',
     features: [
       '1 profesional',
       'Turnos ilimitados',
@@ -45,6 +46,7 @@ const PLANES = [
     price: '$39.999',
     priceNum: 39999,
     desc: 'Para consultorios compartidos',
+    trialLegend: '14 días gratis · Después $39.999/mes · Sin permanencia',
     features: [
       'Hasta 3 profesionales',
       'Turnos ilimitados',
@@ -719,6 +721,7 @@ export default function OnboardingPage() {
                         <div>
                           <span className={cn('text-2xl font-extrabold', plan.popular ? 'text-white' : 'text-gray-900')}>{plan.price}</span>
                           {!plan.enterprise && <p className={cn('text-xs', plan.popular ? 'text-sky-100' : 'text-gray-400')}>/mes</p>}
+                          {plan.trialLegend && <p className={cn('text-[10px] mt-0.5 opacity-75', plan.popular ? 'text-sky-200' : 'text-gray-400')}>{plan.trialLegend}</p>}
                         </div>
                         {isSelected && (
                           <div className={cn('w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-1', plan.popular ? 'bg-white/30' : 'bg-[#0ea5e9]')}>
