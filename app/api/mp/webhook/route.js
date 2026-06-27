@@ -7,10 +7,9 @@ async function procesarPagoAprobado(paymentId) {
   const paymentRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
     headers: { 'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}` },
   });
-
   if (!paymentRes.ok) return;
-  const payment = await paymentRes.json();
 
+  const payment = await paymentRes.json();
   if (payment.status !== 'approved') return;
 
   console.log('PRIMER COBRO EXITOSO: ' + paymentId);
@@ -26,12 +25,12 @@ async function procesarPagoAprobado(paymentId) {
 
   // Evitar duplicados: mismo payment_id ya procesado
   if (solicitud.payment_id === String(paymentId)) return;
-
   // Evitar duplicados: solicitud ya activa por otro pago
   if (solicitud.estado === 'activo') return;
 
   const slug = solicitud.slug_deseado || `prof-${Date.now()}`;
 
+  // Escritura principal: creación del profesional (debe ir primero y sola)
   await crearProfesionalActivo({
     slug,
     nombre: solicitud.nombre,
@@ -48,11 +47,16 @@ async function procesarPagoAprobado(paymentId) {
     subscription_id: payment.preapproval_id || '',
   });
 
-  await actualizarEstadoSolicitud(solicitudId, 'activo');
-  await guardarPaymentIdSolicitud(solicitudId, String(paymentId));
+  // Estas dos escrituras son independientes entre sí -> en paralelo
+  await Promise.all([
+    actualizarEstadoSolicitud(solicitudId, 'activo'),
+    guardarPaymentIdSolicitud(solicitudId, String(paymentId)),
+  ]);
 
+  // FIX: agregado el await que faltaba, para que la función no termine
+  // antes de que el fetch a n8n se complete (o falle de forma controlada)
   if (process.env.N8N_WEBHOOK_URL) {
-    fetch(process.env.N8N_WEBHOOK_URL, {
+    await fetch(process.env.N8N_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -76,8 +80,8 @@ async function procesarPreapproval(id) {
     headers: { 'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}` },
   });
   if (!res.ok) return;
-  const preapproval = await res.json();
 
+  const preapproval = await res.json();
   if (preapproval.status === 'authorized') {
     console.log('NUEVO SUSCRIPTOR: ' + id);
   } else if (preapproval.status === 'cancelled') {
@@ -93,7 +97,6 @@ export async function POST(request) {
     if (type === 'payment' && data?.id) {
       await procesarPagoAprobado(data.id);
     }
-
     if (type === 'preapproval' && data?.id) {
       await procesarPreapproval(data.id);
     }
