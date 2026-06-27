@@ -124,4 +124,4 @@ export async function GET(request) {
 
   return NextResponse.json({ received: true });
 }
-fix: forzar ruta dinamica para evitar cache en webhook MP
+
