@@ -76,11 +76,6 @@ const PLANES = [
 const SERVICIO_VACIO = { nombre: '', duracion: '30', precio: '' };
 const SESSION_KEY = 'citalo_onboarding';
 
-const CHECKOUT_URLS = {
-  'Plan Profesional': 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=a0ae01368917415999d6edf57971b1fa',
-  'Plan Consultorio': 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=2f78e4ba04b947f1ab7a08e5c6556c40',
-};
-
 const ESPECIALIDADES = [
   'Clínica Médica',
   'Medicina General',
@@ -342,15 +337,14 @@ export default function OnboardingPage() {
       fd.append('plan_elegido', planSeleccionado.name);
       if (fotoFile) fd.append('foto', fotoFile);
 
-      const res = await fetch('/api/mp/crear-preferencia', { method: 'POST', body: fd });
+      const res = await fetch('/api/mp/crear-suscripcion', { method: 'POST', body: fd });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Error al iniciar el pago');
       }
       const { init_point } = await res.json();
       sessionStorage.removeItem(SESSION_KEY);
-      const checkoutUrl = CHECKOUT_URLS[planSeleccionado.name];
-      window.location.href = checkoutUrl || init_point;
+      window.location.href = init_point;
     } catch (err) {
       setError(err.message);
       setPaying(false);
