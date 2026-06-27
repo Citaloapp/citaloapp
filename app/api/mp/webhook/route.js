@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getSolicitudById, actualizarEstadoSolicitud, crearProfesionalActivo, guardarPaymentIdSolicitud } from '@/lib/sheets';
 
+export const dynamic = 'force-dynamic';
+
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://citaloapp.com.ar';
 
 async function procesarPagoAprobado(paymentId) {
@@ -53,7 +55,7 @@ async function procesarPagoAprobado(paymentId) {
     guardarPaymentIdSolicitud(solicitudId, String(paymentId)),
   ]);
 
-  // FIX: agregado el await que faltaba, para que la función no termine
+  // Fix: agregado el await que faltaba, para que la función no termine
   // antes de que el fetch a n8n se complete (o falle de forma controlada)
   if (process.env.N8N_WEBHOOK_URL) {
     await fetch(process.env.N8N_WEBHOOK_URL, {
@@ -122,3 +124,4 @@ export async function GET(request) {
 
   return NextResponse.json({ received: true });
 }
+fix: forzar ruta dinamica para evitar cache en webhook MP
