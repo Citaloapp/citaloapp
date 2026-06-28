@@ -5,34 +5,18 @@ export const dynamic = 'force-dynamic';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://citaloapp.com.ar';
 
-async function procesarPagoAprobado(paymentId) {
-  const paymentRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-    headers: { 'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}` },
-  });
-  if (!paymentRes.ok) return;
-
-  const payment = await paymentRes.json();
-  if (payment.status !== 'approved') return;
-
-  console.log('PRIMER COBRO EXITOSO: ' + paymentId);
-
-  const solicitudId = payment.external_reference;
-  if (!solicitudId) return;
-
+async function activarProfesional({ solicitudId, referenciaPago }) {
   const solicitud = await getSolicitudById(solicitudId);
   if (!solicitud) {
     console.error('[mp/webhook] Solicitud no encontrada:', solicitudId);
     return;
   }
 
-  // Evitar duplicados: mismo payment_id ya procesado
-  if (solicitud.payment_id === String(paymentId)) return;
-  // Evitar duplicados: solicitud ya activa por otro pago
+  // Evitar duplicados: ya está activa
   if (solicitud.estado === 'activo') return;
 
   const slug = solicitud.slug_deseado || `prof-${Date.now()}`;
 
-  // Escritura principal: creación del profesional (debe ir primero y sola)
   await crearProfesionalActivo({
     slug,
     nombre: solicitud.nombre,
@@ -46,17 +30,14 @@ async function procesarPagoAprobado(paymentId) {
     obras_sociales: solicitud.obras_sociales,
     duracion_turno_minutos: solicitud.duracion_turno,
     email: solicitud.email,
-    subscription_id: payment.preapproval_id || '',
+    subscription_id: referenciaPago || '',
   });
 
-  // Estas dos escrituras son independientes entre sí -> en paralelo
   await Promise.all([
     actualizarEstadoSolicitud(solicitudId, 'activo'),
-    guardarPaymentIdSolicitud(solicitudId, String(paymentId)),
+    guardarPaymentIdSolicitud(solicitudId, String(referenciaPago || '')),
   ]);
 
-  // Fix: agregado el await que faltaba, para que la función no termine
-  // antes de que el fetch a n8n se complete (o falle de forma controlada)
   if (process.env.N8N_WEBHOOK_URL) {
     await fetch(process.env.N8N_WEBHOOK_URL, {
       method: 'POST',
@@ -77,6 +58,23 @@ async function procesarPagoAprobado(paymentId) {
   console.log('[mp/webhook] Profesional creado:', slug);
 }
 
+async function procesarPagoAprobado(paymentId) {
+  const paymentRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+    headers: { 'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}` },
+  });
+  if (!paymentRes.ok) return;
+
+  const payment = await paymentRes.json();
+  if (payment.status !== 'approved') return;
+
+  console.log('COBRO EXITOSO: ' + paymentId);
+
+  const solicitudId = payment.external_reference;
+  if (!solicitudId) return;
+
+  await activarProfesional({ solicitudId, referenciaPago: paymentId });
+}
+
 async function procesarPreapproval(id) {
   const res = await fetch(`https://api.mercadopago.com/preapproval/${id}`, {
     headers: { 'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}` },
@@ -84,8 +82,12 @@ async function procesarPreapproval(id) {
   if (!res.ok) return;
 
   const preapproval = await res.json();
+
   if (preapproval.status === 'authorized') {
-    console.log('NUEVO SUSCRIPTOR: ' + id);
+    console.log('SUSCRIPCIÓN AUTORIZADA: ' + id);
+    const solicitudId = preapproval.external_reference;
+    if (!solicitudId) return;
+    await activarProfesional({ solicitudId, referenciaPago: id });
   } else if (preapproval.status === 'cancelled') {
     console.log('CANCELÓ SUSCRIPCIÓN: ' + id);
   }
@@ -118,6 +120,11 @@ export async function GET(request) {
 
   if (topic === 'payment' && id) {
     await procesarPagoAprobado(id).catch(err =>
+      console.error('[mp/webhook GET] Error:', err?.message)
+    );
+  }
+  if (topic === 'preapproval' && id) {
+    await procesarPreapproval(id).catch(err =>
       console.error('[mp/webhook GET] Error:', err?.message)
     );
   }
