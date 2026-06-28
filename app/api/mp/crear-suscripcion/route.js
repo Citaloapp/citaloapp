@@ -33,10 +33,15 @@ export async function POST(request) {
     const slug_deseado = formData.get('slug_deseado') || '';
     const plan_elegido = formData.get('plan_elegido') || '';
     const horarios = formData.get('horarios') || '';
+    const card_token_id = formData.get('card_token_id') || '';
     const foto = formData.get('foto');
 
     if (!nombre || !especialidad || !telefono || !email || !plan_elegido) {
       return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 });
+    }
+
+    if (!card_token_id) {
+      return NextResponse.json({ error: 'Faltan datos de la tarjeta' }, { status: 400 });
     }
 
     const preapprovalPlanId = PREAPPROVAL_PLAN_IDS[plan_elegido];
@@ -75,6 +80,8 @@ export async function POST(request) {
         reason: `Citalo — Plan ${plan_elegido}`,
         external_reference: solicitud.id,
         payer_email: email,
+        card_token_id: card_token_id,
+        status: 'authorized',
         back_url: `${BASE_URL}/onboarding/success?solicitud_id=${solicitud.id}`,
       }),
     });
@@ -82,11 +89,11 @@ export async function POST(request) {
     if (!mpRes.ok) {
       const mpErr = await mpRes.json();
       console.error('[mp/crear-suscripcion] Error MP:', mpErr);
-      return NextResponse.json({ error: 'Error al crear la suscripción' }, { status: 500 });
+      return NextResponse.json({ error: mpErr.message || 'Error al crear la suscripción' }, { status: 500 });
     }
 
     const mpData = await mpRes.json();
-    return NextResponse.json({ init_point: mpData.init_point, solicitud_id: solicitud.id });
+    return NextResponse.json({ init_point: mpData.init_point, solicitud_id: solicitud.id, status: mpData.status });
   } catch (err) {
     console.error('[mp/crear-suscripcion] ERROR:', err?.message || err);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
