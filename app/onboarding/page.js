@@ -76,6 +76,8 @@ const PLANES = [
 const SERVICIO_VACIO = { nombre: '', duracion: '30', precio: '' };
 const SESSION_KEY = 'citalo_onboarding';
 
+const TIPOS_DOCUMENTO = ['DNI', 'CI', 'LC', 'LE', 'Otro'];
+
 const ESPECIALIDADES = [
   'Clínica Médica',
   'Medicina General',
@@ -222,6 +224,14 @@ export default function OnboardingPage() {
   // Paso 2 — plan
   const [planSeleccionado, setPlanSeleccionado] = useState(null);
 
+  // Paso 3 — tarjeta
+  const [cardholderName, setCardholderName] = useState('');
+  const [docType, setDocType] = useState('DNI');
+  const [docNumber, setDocNumber] = useState('');
+  const [mpReady, setMpReady] = useState(false);
+  const mpInstanceRef = useRef(null);
+  const cardFormFieldsRef = useRef(null);
+
   const fileInputRef = useRef(null);
 
   // Restaurar desde sessionStorage al montar
@@ -268,6 +278,7 @@ export default function OnboardingPage() {
   const step0Valid = nombre.trim() && especialidad.trim() && telefono.trim() && email.trim();
   const step1Valid = servicios.some(s => s.nombre.trim());
   const step2Valid = !!planSeleccionado;
+  const step3Valid = cardholderName.trim() && docNumber.trim();
 
   function addServicio() { setServicios(prev => [...prev, { ...SERVICIO_VACIO }]); }
   function removeServicio(i) { setServicios(prev => prev.filter((_, idx) => idx !== i)); }
@@ -317,10 +328,67 @@ export default function OnboardingPage() {
     setFotoPreview(URL.createObjectURL(file));
   }
 
+  // ── Inicializar los campos seguros de tarjeta de MercadoPago cuando se entra al Paso 3 ──
+  useEffect(() => {
+    if (step !== 3) return;
+
+    let attempts = 0;
+    const tryInit = () => {
+      if (typeof window === 'undefined' || !window.MercadoPago) {
+        attempts += 1;
+        if (attempts < 40) {
+          setTimeout(tryInit, 250);
+        }
+        return;
+      }
+      if (mpInstanceRef.current) {
+        setMpReady(true);
+        return;
+      }
+
+      const mp = new window.MercadoPago(
+        'APP_USR-a4f9a444-2732-45d8-9812-09a93bd8774a',
+        { locale: 'es-AR' }
+      );
+      mpInstanceRef.current = mp;
+
+      const cardNumberField = mp.fields.create('cardNumber', {
+        placeholder: 'Número de tarjeta',
+      });
+      const expirationDateField = mp.fields.create('expirationDate', {
+        placeholder: 'MM/AA',
+      });
+      const securityCodeField = mp.fields.create('securityCode', {
+        placeholder: 'CVV',
+      });
+
+      cardNumberField.mount('mp-cardNumber');
+      expirationDateField.mount('mp-expirationDate');
+      securityCodeField.mount('mp-securityCode');
+
+      cardFormFieldsRef.current = { cardNumberField, expirationDateField, securityCodeField };
+      setMpReady(true);
+    };
+
+    tryInit();
+  }, [step]);
+
   async function handlePagar() {
     setPaying(true);
     setError('');
     try {
+      if (!mpInstanceRef.current) {
+        throw new Error('El formulario de tarjeta todavía está cargando. Esperá unos segundos e intentá de nuevo.');
+      }
+
+      // 1. Generar el token de la tarjeta con MercadoPago (los datos de la tarjeta nunca pasan por nuestro servidor)
+      const token = await mpInstanceRef.current.fields.createCardToken({
+        cardholderName: cardholderName,
+        identificationType: docType,
+        identificationNumber: docNumber,
+      });
+
+      // 2. Mandar todo al backend, incluyendo el card_token_id recién generado
       const fd = new FormData();
       fd.append('nombre', nombre);
       fd.append('especialidad', especialidad);
@@ -335,6 +403,7 @@ export default function OnboardingPage() {
       fd.append('horarios', serializeHorarios(horariosPorDia));
       fd.append('servicios', JSON.stringify(servicios.filter(s => s.nombre.trim())));
       fd.append('plan_elegido', planSeleccionado.name);
+      fd.append('card_token_id', token.id);
       if (fotoFile) fd.append('foto', fotoFile);
 
       const res = await fetch('/api/mp/crear-suscripcion', { method: 'POST', body: fd });
@@ -342,11 +411,11 @@ export default function OnboardingPage() {
         const data = await res.json();
         throw new Error(data.error || 'Error al iniciar el pago');
       }
-      const { init_point } = await res.json();
+      const data = await res.json();
       sessionStorage.removeItem(SESSION_KEY);
-      window.location.href = init_point;
+      window.location.href = `/onboarding/success?solicitud_id=${data.solicitud_id}`;
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'No pudimos procesar la tarjeta. Revisá los datos e intentá de nuevo.');
       setPaying(false);
     }
   }
@@ -844,6 +913,62 @@ export default function OnboardingPage() {
               </div>
             )}
 
+            {/* Datos de tarjeta */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Datos de la tarjeta</p>
+                <p className="text-xs text-gray-400 mt-0.5">Tus datos se procesan de forma segura por MercadoPago.</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Número de tarjeta</label>
+                <div id="mp-cardNumber" className="border border-gray-300 rounded-xl px-3 py-2.5 h-11" />
+              </div>
+
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Vencimiento</label>
+                  <div id="mp-expirationDate" className="border border-gray-300 rounded-xl px-3 py-2.5 h-11" />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Código de seguridad</label>
+                  <div id="mp-securityCode" className="border border-gray-300 rounded-xl px-3 py-2.5 h-11" />
+                </div>
+              </div>
+
+              <Field
+                label="Nombre del titular (como figura en la tarjeta) *"
+                placeholder="Ej: JORGE SAGER"
+                value={cardholderName}
+                onChange={setCardholderName}
+              />
+
+              <div className="flex gap-3">
+                <div className="w-28 shrink-0">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipo doc.</label>
+                  <select
+                    value={docType}
+                    onChange={e => setDocType(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-2 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]"
+                  >
+                    {TIPOS_DOCUMENTO.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <Field
+                    label="Número de documento *"
+                    placeholder="Ej: 30123456"
+                    value={docNumber}
+                    onChange={setDocNumber}
+                  />
+                </div>
+              </div>
+
+              {!mpReady && (
+                <p className="text-xs text-gray-400">Cargando formulario de pago seguro...</p>
+              )}
+            </div>
+
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
                 {error}
@@ -852,26 +977,26 @@ export default function OnboardingPage() {
 
             <button
               className="w-full h-12 rounded-2xl font-semibold text-white text-base bg-[#0ea5e9] hover:bg-[#0284c7] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
-              disabled={paying}
+              disabled={paying || !step3Valid || !mpReady}
               onClick={handlePagar}
             >
               {paying ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Redirigiendo a MercadoPago...
+                  Procesando pago...
                 </>
               ) : (
                 <>
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                   </svg>
-                  Confirmar y pagar con MercadoPago
+                  Confirmar y empezar prueba gratis
                 </>
               )}
             </button>
 
             <p className="text-center text-xs text-gray-400">
-              Serás redirigido al checkout seguro de MercadoPago para completar el pago.
+              No se realizará ningún cobro durante los 14 días de prueba gratuita.
             </p>
           </div>
         )}
