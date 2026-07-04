@@ -12,7 +12,6 @@ async function activarProfesional({ solicitudId, referenciaPago }) {
     return;
   }
 
-  // Evitar duplicados: ya está activa
   if (solicitud.estado === 'activo') return;
 
   const slug = solicitud.slug_deseado || `prof-${Date.now()}`;
@@ -51,6 +50,7 @@ async function activarProfesional({ solicitudId, referenciaPago }) {
         link_turnos: `${BASE_URL}/${slug}`,
         plan: solicitud.plan_elegido,
         fecha_registro: new Date().toISOString(),
+        preapproval_id: referenciaPago,
       }),
     }).catch(err => console.error('[mp/webhook] n8n webhook falló:', err?.message));
   }
@@ -112,7 +112,6 @@ export async function POST(request) {
   }
 }
 
-// MP también usa GET para notificaciones IPN legacy
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const topic = searchParams.get('topic');
