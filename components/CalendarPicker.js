@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import {
   format,
@@ -23,21 +22,23 @@ const DIA_JS = { lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5, sabad
 
 export function CalendarPicker({ onDateSelect, selectedDate, diasAtencion }) {
   const diasPermitidos = diasAtencion
-    ? diasAtencion.split(',').map(d => d.trim().toLowerCase()).filter(Boolean).map(d => DIA_JS[d]).filter(n => n !== undefined)
+    ? diasAtencion.split(';').map(d => {
+        // Soporta formato nuevo "lunes:09:00-18:00" y viejo "lunes,miercoles"
+        const nombre = d.split(':')[0].trim().toLowerCase();
+        return DIA_JS[nombre];
+      }).filter(n => n !== undefined)
     : null;
-  const [currentMonth, setCurrentMonth] = useState(new Date());
 
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const monthStart = startOfMonth(currentMonth);
   const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
   const endDate = endOfWeek(endOfMonth(monthStart), { weekStartsOn: 1 });
-
   const days = [];
   let day = startDate;
   while (day <= endDate) {
     days.push(new Date(day));
     day = addDays(day, 1);
   }
-
   const today = startOfDay(new Date());
 
   return (
@@ -65,7 +66,6 @@ export function CalendarPicker({ onDateSelect, selectedDate, diasAtencion }) {
           </svg>
         </button>
       </div>
-
       <div className="grid grid-cols-7 gap-1 mb-1">
         {DAY_NAMES.map(d => (
           <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">
@@ -73,7 +73,6 @@ export function CalendarPicker({ onDateSelect, selectedDate, diasAtencion }) {
           </div>
         ))}
       </div>
-
       <div className="grid grid-cols-7 gap-1">
         {days.map((d, i) => {
           const inMonth = isSameMonth(d, currentMonth);
@@ -84,7 +83,6 @@ export function CalendarPicker({ onDateSelect, selectedDate, diasAtencion }) {
           const isSelected = selectedDate && isSameDay(d, selectedDate);
           const isTodayDay = isToday(d);
           const disabled = !inMonth || isPast || isDiaNoPermitido;
-
           return (
             <button
               key={i}
