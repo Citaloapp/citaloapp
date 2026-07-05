@@ -6,6 +6,16 @@ export const dynamic = 'force-dynamic';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://citaloapp.com.ar';
 
+function generarSlug(nombre) {
+  return nombre
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
+}
+
 async function activarProfesional({ solicitudId, referenciaPago }) {
   const solicitud = await getSolicitudById(solicitudId);
   if (!solicitud) {
@@ -15,7 +25,7 @@ async function activarProfesional({ solicitudId, referenciaPago }) {
 
   if (solicitud.estado === 'activo') return;
 
-  const slug = solicitud.slug_deseado || `prof-${Date.now()}`;
+  const slug = solicitud.slug_deseado || generarSlug(solicitud.nombre);
 
   // Crear calendario de Google para el profesional
   let calendarId = '';
