@@ -15,13 +15,11 @@ import { cn } from '@/lib/utils';
 export function BookingWizard({ profesional }) {
   const router = useRouter();
 
-  // Servicios
   const [servicios, setServicios] = useState([]);
   const [serviciosLoaded, setServiciosLoaded] = useState(false);
   const [selectedServicio, setSelectedServicio] = useState(null);
 
-  // Wizard state
-  const [step, setStep] = useState(null); // null mientras carga
+  const [step, setStep] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   const [availableSlots, setAvailableSlots] = useState([]);
@@ -44,7 +42,6 @@ export function BookingWizard({ profesional }) {
     : ['Fecha y hora', 'Tus datos', 'Confirmar'];
   const stepBase = hasServicios ? 0 : 1;
 
-  // Cargar servicios al montar — si no hay, saltar al paso 1
   useEffect(() => {
     fetch(`/api/servicios?slug=${profesional.slug}`)
       .then(r => r.json())
@@ -71,12 +68,11 @@ export function BookingWizard({ profesional }) {
         duracion: String(duracion),
         slug: profesional.slug,
       });
-      if (profesional.horarios) {
-        params.set('horarios', profesional.horarios);
+      if (profesional.dias_atencion) {
+        params.set('horarios', profesional.dias_atencion);
       } else {
         if (profesional.horario_inicio) params.set('horario_inicio', profesional.horario_inicio);
         if (profesional.horario_fin) params.set('horario_fin', profesional.horario_fin);
-        if (profesional.dias_atencion) params.set('dias_atencion', profesional.dias_atencion);
       }
       const res = await fetch(`/api/slots?${params.toString()}`);
       if (!res.ok) throw new Error('error');
@@ -146,7 +142,6 @@ export function BookingWizard({ profesional }) {
     ? format(selectedDate, "EEEE d 'de' MMMM", { locale: es })
     : '';
 
-  // Loading inicial
   if (!serviciosLoaded) {
     return (
       <div className="flex justify-center py-16">
@@ -158,7 +153,6 @@ export function BookingWizard({ profesional }) {
   return (
     <div className="max-w-lg mx-auto px-4 pb-16">
 
-      {/* Steps indicator */}
       <div className="flex items-center justify-center gap-2 py-6">
         {STEPS.map((label, i) => {
           const stepNum = i + stepBase;
