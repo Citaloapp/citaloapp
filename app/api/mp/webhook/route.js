@@ -27,7 +27,6 @@ async function activarProfesional({ solicitudId, referenciaPago }) {
 
   const slug = solicitud.slug_deseado || generarSlug(solicitud.nombre);
 
-  // Crear calendario de Google para el profesional
   let calendarId = '';
   try {
     calendarId = await crearCalendarioProfesional(solicitud.nombre);
@@ -50,6 +49,7 @@ async function activarProfesional({ solicitudId, referenciaPago }) {
     duracion_turno_minutos: solicitud.duracion_turno,
     email: solicitud.email,
     subscription_id: referenciaPago || '',
+    horarios: solicitud.horarios || '',
   });
 
   await Promise.all([
