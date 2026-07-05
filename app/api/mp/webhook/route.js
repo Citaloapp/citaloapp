@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSolicitudById, actualizarEstadoSolicitud, crearProfesionalActivo, guardarPaymentIdSolicitud } from '@/lib/sheets';
+import { crearCalendarioProfesional } from '@/lib/calendar';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,15 @@ async function activarProfesional({ solicitudId, referenciaPago }) {
 
   const slug = solicitud.slug_deseado || `prof-${Date.now()}`;
 
+  // Crear calendario de Google para el profesional
+  let calendarId = '';
+  try {
+    calendarId = await crearCalendarioProfesional(solicitud.nombre);
+    console.log('[mp/webhook] Calendar creado:', calendarId);
+  } catch (err) {
+    console.error('[mp/webhook] Error creando calendar:', err?.message);
+  }
+
   await crearProfesionalActivo({
     slug,
     nombre: solicitud.nombre,
@@ -24,7 +34,7 @@ async function activarProfesional({ solicitudId, referenciaPago }) {
     foto_url: solicitud.foto_url,
     descripcion: solicitud.descripcion,
     telefono_whatsapp: solicitud.telefono,
-    calendar_id: '',
+    calendar_id: calendarId,
     color_marca: solicitud.color_marca,
     obras_sociales: solicitud.obras_sociales,
     duracion_turno_minutos: solicitud.duracion_turno,
