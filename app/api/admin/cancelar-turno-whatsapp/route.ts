@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { getProfesional, cancelarTurno } from '@/lib/sheets';
+import { eliminarEvento } from '@/lib/calendar';
 
 function getPrivateKey() {
   const key = process.env.GOOGLE_PRIVATE_KEY || '';
@@ -34,6 +35,12 @@ function normalizarTelefono(str) {
   return (str || '').replace(/\D/g, '');
 }
 
+function getTurnoDatetime(fecha, hora) {
+  const [year, month, day] = fecha.split('-').map(Number);
+  const [hours, minutes] = hora.split(':').map(Number);
+  return new Date(year, month - 1, day, hours, minutes, 0);
+}
+
 function checkAuth(request) {
   return request.headers.get('x-admin-password') === process.env.ADMIN_PASSWORD;
 }
@@ -63,7 +70,6 @@ async function buscarProximoTurnoPorTelefono(slug, telefono) {
 
   if (candidatos.length === 0) return null;
 
-  // Ordenamos por fecha+hora ascendente y devolvemos el más próximo.
   candidatos.sort((a, b) => {
     const fa = `${a.fecha} ${a.hora}`;
     const fb = `${b.fecha} ${b.hora}`;
@@ -105,7 +111,25 @@ export async function POST(request) {
       );
     }
 
+    // A diferencia del link de cancelación, por WhatsApp SIEMPRE se permite
+    // cancelar. Si faltan menos de 24hs, no se bloquea: solo se marca como
+    // "tardía" para avisarle al profesional en la notificación.
+    const fechaTurno = getTurnoDatetime(turno.fecha, turno.hora);
+    const cancelacion_tardia = fechaTurno <= new Date(Date.now() + 24 * 60 * 60 * 1000);
+
     await cancelarTurno(turno.id);
+
+    if (turno.calendar_event_id && profesional?.calendar_id) {
+      await eliminarEvento(profesional.calendar_id, turno.calendar_event_id).catch(
+        err => console.error('Calendar delete failed:', err)
+      );
+    }
+
+    // No disparamos process.env.N8N_WEBHOOK_URL acá: ya es n8n quien llamó a
+    // este endpoint, así que los nodos siguientes del mismo workflow
+    // (WA Paciente Cancelación / WA Profesional Cancelación) se encargan de
+    // notificar. Disparar ese webhook de nuevo generaría una notificación
+    // duplicada.
 
     return NextResponse.json({
       ok: true,
@@ -116,13 +140,13 @@ export async function POST(request) {
         fecha: turno.fecha,
         hora: turno.hora,
         servicio_nombre: turno.servicio_nombre,
-        calendar_event_id: turno.calendar_event_id,
       },
       profesional: {
         slug: profesional.slug,
         nombre: profesional.nombre,
         telefono_whatsapp: profesional.telefono_whatsapp,
       },
+      cancelacion_tardia,
     });
   } catch (err) {
     console.error(err);
