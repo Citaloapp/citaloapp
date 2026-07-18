@@ -76,6 +76,16 @@ export default function AdminPage() {
   const [servMsg, setServMsg] = useState('');
   const [newServ, setNewServ] = useState(EMPTY_SERV);
 
+  // Pacientes
+  const [pacientes, setPacientes] = useState([]);
+  const [selectedSlugPac, setSelectedSlugPac] = useState('');
+  const [loadingPacientes, setLoadingPacientes] = useState(false);
+  const [pacienteExpandido, setPacienteExpandido] = useState(null);
+  const [historial, setHistorial] = useState([]);
+  const [loadingHistorial, setLoadingHistorial] = useState(false);
+  const [nuevaNota, setNuevaNota] = useState('');
+  const [savingNota, setSavingNota] = useState(false);
+
   const storedPw = typeof window !== 'undefined' ? sessionStorage.getItem(SESSION_KEY) : null;
 
   useEffect(() => {
@@ -134,6 +144,13 @@ export default function AdminPage() {
     }
   }, [profesionales, selectedSlugServ]);
 
+  // Inicializar slug de pacientes cuando cargan profesionales
+  useEffect(() => {
+    if (profesionales.length > 0 && !selectedSlugPac) {
+      setSelectedSlugPac(profesionales[0].slug);
+    }
+  }, [profesionales, selectedSlugPac]);
+
   const loadTurnos = useCallback(async () => {
     if (!selectedSlug) return;
     setLoadingTurnos(true);
@@ -174,6 +191,79 @@ export default function AdminPage() {
       loadServicios(selectedSlugServ);
     }
   }, [authenticated, activeTab, selectedSlugServ, loadServicios]);
+
+  const loadPacientes = useCallback(async (slug) => {
+    if (!slug) return;
+    setLoadingPacientes(true);
+    try {
+      const res = await fetch(`/api/admin/pacientes?slug=${slug}`, { headers: headers() });
+      const data = await res.json();
+      setPacientes(data.pacientes || []);
+    } catch {
+      setPacientes([]);
+    } finally {
+      setLoadingPacientes(false);
+    }
+  }, [headers]);
+
+  useEffect(() => {
+    if (authenticated && activeTab === 'pacientes' && selectedSlugPac) {
+      loadPacientes(selectedSlugPac);
+    }
+  }, [authenticated, activeTab, selectedSlugPac, loadPacientes]);
+
+  async function handleExpandirPaciente(telefono) {
+    if (pacienteExpandido === telefono) {
+      setPacienteExpandido(null);
+      return;
+    }
+    setPacienteExpandido(telefono);
+    setLoadingHistorial(true);
+    try {
+      const res = await fetch(
+        `/api/admin/historial?slug=${selectedSlugPac}&telefono=${encodeURIComponent(telefono)}`,
+        { headers: headers() }
+      );
+      const data = await res.json();
+      setHistorial(data.historial || []);
+    } catch {
+      setHistorial([]);
+    } finally {
+      setLoadingHistorial(false);
+    }
+  }
+
+  async function handleAgregarNota(paciente) {
+    if (!nuevaNota.trim()) return;
+    setSavingNota(true);
+    try {
+      const res = await fetch('/api/admin/historial', {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify({
+          profesional_slug: selectedSlugPac,
+          paciente_telefono: paciente.paciente_telefono,
+          paciente_nombre: paciente.paciente_nombre,
+          nota: nuevaNota.trim(),
+        }),
+      });
+      if (res.ok) {
+        setNuevaNota('');
+        const res2 = await fetch(
+          `/api/admin/historial?slug=${selectedSlugPac}&telefono=${encodeURIComponent(paciente.paciente_telefono)}`,
+          { headers: headers() }
+        );
+        const data2 = await res2.json();
+        setHistorial(data2.historial || []);
+      } else {
+        alert('Error al guardar la nota');
+      }
+    } catch {
+      alert('Error de conexión');
+    } finally {
+      setSavingNota(false);
+    }
+  }
 
   // ── Handlers profesionales ──────────────────────────────────────────────
 
@@ -444,6 +534,7 @@ export default function AdminPage() {
     { key: 'turnos',         label: 'Turnos del día' },
     { key: 'profesionales',  label: 'Profesionales'  },
     { key: 'servicios',      label: 'Servicios'       },
+    { key: 'pacientes',      label: 'Pacientes'       },
   ];
 
   return (
@@ -882,6 +973,97 @@ export default function AdminPage() {
                           Eliminar
                         </Button>
                       </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Tab: Pacientes ── */}
+        {activeTab === 'pacientes' && (
+          <div className="space-y-4">
+            <div>
+              <Label>Profesional</Label>
+              <Select
+                value={selectedSlugPac}
+                onChange={e => {
+                  setSelectedSlugPac(e.target.value);
+                  setPacienteExpandido(null);
+                }}
+                className="w-56"
+              >
+                {profesionales.map(p => <option key={p.slug} value={p.slug}>{p.nombre}</option>)}
+              </Select>
+            </div>
+
+            {loadingPacientes ? (
+              <div className="flex justify-center py-12">
+                <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : pacientes.length === 0 ? (
+              <Card><CardContent className="text-center py-12 text-gray-400">No hay pacientes registrados</CardContent></Card>
+            ) : (
+              <div className="space-y-2">
+                {pacientes.map(p => (
+                  <Card key={p.paciente_telefono}>
+                    <CardContent className="py-4">
+                      <div
+                        className="flex items-center justify-between gap-4 cursor-pointer"
+                        onClick={() => handleExpandirPaciente(p.paciente_telefono)}
+                      >
+                        <div>
+                          <p className="font-medium text-gray-900 text-sm">{p.paciente_nombre}</p>
+                          <p className="text-xs text-gray-500">{p.paciente_telefono}</p>
+                          <p className="text-xs text-gray-400">
+                            {p.cantidad_turnos} turno{p.cantidad_turnos !== 1 ? 's' : ''} · último: {p.ultimo_turno_fecha}
+                          </p>
+                        </div>
+                        <Button variant="outline" size="sm">
+                          {pacienteExpandido === p.paciente_telefono ? 'Cerrar' : 'Ver historial'}
+                        </Button>
+                      </div>
+
+                      {pacienteExpandido === p.paciente_telefono && (
+                        <div className="mt-4 pt-4 border-t border-gray-100 space-y-4">
+                          {loadingHistorial ? (
+                            <div className="flex justify-center py-6">
+                              <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                            </div>
+                          ) : historial.length === 0 ? (
+                            <p className="text-sm text-gray-400">Todavía no hay notas para este paciente.</p>
+                          ) : (
+                            <div className="space-y-3">
+                              {historial.map(h => (
+                                <div key={h.id} className="bg-gray-50 rounded-xl px-4 py-3">
+                                  <p className="text-xs text-gray-400 mb-1">{h.fecha}</p>
+                                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{h.nota}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="space-y-2">
+                            <Label>Agregar nota</Label>
+                            <Textarea
+                              value={nuevaNota}
+                              onChange={e => setNuevaNota(e.target.value)}
+                              placeholder="Escribí una observación, diagnóstico o nota de consulta..."
+                              rows={3}
+                            />
+                            <div className="flex justify-end">
+                              <Button
+                                size="sm"
+                                onClick={() => handleAgregarNota(p)}
+                                disabled={savingNota || !nuevaNota.trim()}
+                              >
+                                {savingNota ? 'Guardando...' : 'Guardar nota'}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
