@@ -16,6 +16,11 @@ function generarSlug(nombre) {
     .replace(/\s+/g, '-');
 }
 
+function generarPasswordProfesional() {
+  // PIN de 6 dígitos, fácil de tipear desde WhatsApp en el celular
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
 async function activarProfesional({ solicitudId, referenciaPago }) {
   const solicitud = await getSolicitudById(solicitudId);
   if (!solicitud) {
@@ -26,6 +31,7 @@ async function activarProfesional({ solicitudId, referenciaPago }) {
   if (solicitud.estado === 'activo') return;
 
   const slug = solicitud.slug_deseado || generarSlug(solicitud.nombre);
+  const password = generarPasswordProfesional();
 
   let calendarId = '';
   try {
@@ -50,6 +56,7 @@ async function activarProfesional({ solicitudId, referenciaPago }) {
     email: solicitud.email,
     subscription_id: referenciaPago || '',
     horarios: solicitud.horarios || '',
+    password,
   });
 
   await Promise.all([
@@ -68,6 +75,8 @@ async function activarProfesional({ solicitudId, referenciaPago }) {
         profesional_telefono: solicitud.telefono,
         profesional_slug: slug,
         link_turnos: `${BASE_URL}/${slug}`,
+        link_panel: `${BASE_URL}/profesional/login`,
+        panel_password: password,
         plan: solicitud.plan_elegido,
         fecha_registro: new Date().toISOString(),
         preapproval_id: referenciaPago,
