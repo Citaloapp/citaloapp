@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
-import { getProfesional, cancelarTurno } from '@/lib/sheets';
+import { getAllProfesionales, cancelarTurno } from '@/lib/sheets';
 import { eliminarEvento } from '@/lib/calendar';
 
 function getPrivateKey() {
@@ -30,9 +30,18 @@ function rowToObject(headers, row) {
 }
 
 function normalizarTelefono(str) {
-  // Deja solo dígitos, para poder comparar "5493364642051" con variantes
-  // que puedan venir con "+", espacios, o el "9" extra de WhatsApp.
   return (str || '').replace(/\D/g, '');
+}
+
+// Convierte "Jorge Sager", "JORGE-SAGER", " jorge sager " etc. a "jorge-sager",
+// para que no importe cómo Evolution mande el nombre de la instancia.
+function normalizarSlug(str) {
+  return (str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
 }
 
 function getTurnoDatetime(fecha, hora) {
@@ -45,10 +54,6 @@ function checkAuth(request) {
   return request.headers.get('x-admin-password') === process.env.ADMIN_PASSWORD;
 }
 
-/**
- * Busca, entre los turnos "confirmado" de un profesional, el más próximo
- * (fecha/hora futura más cercana) que pertenezca a ese teléfono.
- */
 async function buscarProximoTurnoPorTelefono(slug, telefono) {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
@@ -86,22 +91,31 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
-    const { telefono, slug } = body;
+    const { telefono, slug: slugCrudo } = body;
 
-    if (!telefono || !slug) {
+    if (!telefono || !slugCrudo) {
       return NextResponse.json(
         { error: 'telefono y slug son requeridos' },
         { status: 400 }
       );
     }
 
-    const profesional = await getProfesional(slug);
+    // Buscamos el profesional comparando versiones normalizadas, así no
+    // importa si Evolution manda "Jorge Sager" en vez de "jorge-sager".
+    const slugBuscado = normalizarSlug(slugCrudo);
+    const todos = await getAllProfesionales();
+    const profesional = todos.find(p => normalizarSlug(p.slug) === slugBuscado);
+
     if (!profesional) {
       return NextResponse.json(
         { error: 'Profesional no encontrado' },
         { status: 404 }
       );
     }
+
+    // A partir de acá usamos el slug REAL guardado en Sheets (profesional.slug),
+    // no el que mandó Evolution, para que coincida con profesional_slug en turnos.
+    const slug = profesional.slug;
 
     const turno = await buscarProximoTurnoPorTelefono(slug, telefono);
     if (!turno) {
@@ -111,9 +125,6 @@ export async function POST(request) {
       );
     }
 
-    // A diferencia del link de cancelación, por WhatsApp SIEMPRE se permite
-    // cancelar. Si faltan menos de 24hs, no se bloquea: solo se marca como
-    // "tardía" para avisarle al profesional en la notificación.
     const fechaTurno = getTurnoDatetime(turno.fecha, turno.hora);
     const cancelacion_tardia = fechaTurno <= new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -124,12 +135,6 @@ export async function POST(request) {
         err => console.error('Calendar delete failed:', err)
       );
     }
-
-    // No disparamos process.env.N8N_WEBHOOK_URL acá: ya es n8n quien llamó a
-    // este endpoint, así que los nodos siguientes del mismo workflow
-    // (WA Paciente Cancelación / WA Profesional Cancelación) se encargan de
-    // notificar. Disparar ese webhook de nuevo generaría una notificación
-    // duplicada.
 
     return NextResponse.json({
       ok: true,
